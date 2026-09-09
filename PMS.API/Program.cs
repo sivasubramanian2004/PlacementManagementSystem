@@ -1,11 +1,19 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
-using PMS.API.Middleware;
-using Serilog;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Text;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
+using PMS.API.Middleware;
+using PMS.Core.Helpers;
+using PMS.Core.Validators;
+using FluentValidation;
 using PMS.Data;
+using PMS.Data.Repositories;
+using PMS.Data.UnitOfWork;
+using PMS.Service.Authentication;
+using PMS.Service.Email;
+using Serilog;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================
@@ -62,10 +70,23 @@ builder.Services.AddAuthorization();
 
 
 // Add services to the container.
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<JwtTokenGenerator>();
 
-// ============================
-// 5. CONTROLLERS + SWAGGER
-// ============================
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddHttpContextAccessor();   // add this, if not already there
+// already covered via open-generic registration
+
+//fluent validation
+builder.Services.AddValidatorsFromAssemblyContaining<AuthRequestDtoValidator>();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+});
+
 // ============================
 // 5. CONTROLLERS + SWAGGER
 // ============================

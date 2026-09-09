@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PMS.Data;
 
@@ -11,9 +12,11 @@ using PMS.Data;
 namespace PMS.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260908175152_UpdateUserIsActiveDefault")]
+    partial class UpdateUserIsActiveDefault
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -339,21 +342,6 @@ namespace PMS.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("LastName");
-
-                    b.Property<string>("OtpCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasColumnName("OtpCode");
-
-                    b.Property<DateTime?>("OtpExpiryTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("OtpExpiryTime");
-
-                    b.Property<bool>("OtpIsUsed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName(" OtpIsUsed");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

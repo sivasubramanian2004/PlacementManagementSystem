@@ -19,19 +19,22 @@ namespace PMS.Data.FluentAPI
             builder.HasKey(s => s.Id);
 
             //Property configuration
+            builder.Property(s => s.Id)
+                   .ValueGeneratedOnAdd();
+
             builder.Property(s => s.RegisterNumber)
                    .HasColumnName("RegisterNumber")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(s => s.Name)
                    .HasColumnName("Name")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(s => s.Gender)
                   .HasColumnName("Gender")
-                  .IsRequired(true);
+                  .IsRequired();
 
             builder.Property(s => s.Phone)
                    .HasColumnName("Phone")
@@ -51,22 +54,22 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(s => s.PlacementStatus)
                    .HasColumnName(" PlacementStatus")
-                   .IsRequired(true);
+                   .IsRequired();
                   
 
             builder.Property(s => s.ResumeUrl)
                    .HasColumnName("ResumeUrl")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(500);
 
             builder.Property(s => s.ProfilePictureUrl)
                    .HasColumnName("ProfilePictureUrl")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(500);
 
             builder.Property(d => d.CreatedDate)
                    .HasColumnName("CreatedDate")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasDefaultValueSql("GETDATE()");
 
             builder.Property(d => d.CreatedBy)
@@ -93,12 +96,12 @@ namespace PMS.Data.FluentAPI
             builder.Property(d => d.IsActive)
                    .HasColumnName("IsActive")
                    .HasDefaultValue(true)
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(d => d.IsDeleted)
                    .HasColumnName("IsDeleted")
                    .HasDefaultValue(false)
-                   .IsRequired(true);
+                   .IsRequired();
 
             //Index Configuration
             builder.HasIndex(u => u.RegisterNumber)
@@ -120,8 +123,6 @@ namespace PMS.Data.FluentAPI
                    .HasForeignKey(s => s.DepartmentId)
                    .IsRequired()
                    .OnDelete(DeleteBehavior.Cascade);
-
-            
 
         }
     }

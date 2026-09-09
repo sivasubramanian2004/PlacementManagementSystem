@@ -17,7 +17,7 @@ namespace PMS.Core.Helpers
 
         public int? UpdatedBy { get; set; }
 
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         // Soft Delete
         public bool IsDeleted { get; set; }

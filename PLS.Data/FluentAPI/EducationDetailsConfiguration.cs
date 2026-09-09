@@ -19,27 +19,30 @@ namespace PMS.Data.FluentAPI
             builder.HasKey(e => e.Id);
 
             //Property configuration
+            builder.Property(e => e.Id)
+                   .ValueGeneratedOnAdd();
+
             builder.Property(e => e.EducationType)
                    .HasColumnName("EducationType")
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(e => e.Institution)
                    .HasColumnName("Institution")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(200);
 
             builder.Property(e => e.PercentageOrCgpa)
                    .HasColumnName("PercentageOrCgpa")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasPrecision(10,2);
 
             builder.Property(e => e.Backlogs)
                    .HasColumnName("Backlogs")
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(e => e.YearOfPassing)
                    .HasColumnName("YearOfPassing")
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(e => e.Location)
                    .HasColumnName("Location")
@@ -75,18 +78,18 @@ namespace PMS.Data.FluentAPI
             builder.Property(e => e.IsActive)
                    .HasColumnName("IsActive")
                    .HasDefaultValue(true)
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(e => e.IsDeleted)
                    .HasColumnName("IsDeleted")
                    .HasDefaultValue(false)
-                   .IsRequired(true);
+                   .IsRequired();
 
             //Relationship Configuration
             builder.HasOne(e => e.Student)
                    .WithMany(s=> s.Educations)
                    .HasForeignKey(e => e.StudentId)
-                   .IsRequired(true)
+                   .IsRequired()
                    .OnDelete(DeleteBehavior.Cascade);
 
            builder.HasQueryFilter(e => !e.IsDeleted);

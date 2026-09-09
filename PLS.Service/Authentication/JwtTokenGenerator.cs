@@ -17,21 +17,31 @@ namespace PMS.Service.Authentication
             _config = config;
         }
 
-        public (string token, DateTime expiresAt) GenerateToken(int userId, string email, string role, string name)
+        public (string token, DateTime expiresAt) GenerateToken(int userId, string email, string role, string firstName, string lastName)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"]!;
             var expiryMinutes = int.Parse(jwtSettings["ExpiryMinutes"]!);
             var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
+            /*
+            NameIdentifier → User ID
+            Email          → Email
+            Role           → User Role
+            GivenName      → First Name
+            Surname        → Last Name
+            Jti            → Unique JWT ID
+             */
+
             var claims = new List<Claim>
-        {
+            {
             new(ClaimTypes.NameIdentifier, userId.ToString()),
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Role, role),
-            new(ClaimTypes.Name, name),
+            new(ClaimTypes. GivenName, firstName),
+            new(ClaimTypes.Surname, lastName  ),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+            };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
