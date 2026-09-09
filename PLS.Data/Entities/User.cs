@@ -15,6 +15,12 @@ namespace PMS.Data.Entities
 
         public string Role { get; set; } = string.Empty;
 
+        public string? OtpCode { get; set; }
+
+        public DateTime? OtpExpiryTime { get; set; }
+
+        public bool? OtpIsUsed { get; set; }
+
         // Navigation Property
         public Student? Student { get; set; }
     }

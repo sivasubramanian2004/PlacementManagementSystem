@@ -19,36 +19,54 @@ namespace PMS.Data.FluentAPI
             builder.HasKey(u => u.Id);
 
             //Property configuration
+            builder.Property(u => u.Id)
+                  .ValueGeneratedOnAdd();
+
             builder.Property(u => u.FirstName)
                    .HasColumnName("FirstName")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(u => u.LastName)
                    .HasColumnName("LastName")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(u => u.Email)
                    .HasColumnName("EmailID")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(u => u.PasswordHash)
                    .HasColumnName("PasswordHash")
-                   .IsRequired(true)
+                   .IsRequired()
                    .HasMaxLength(100);
 
             builder.Property(u => u.Role)
-                     .HasColumnName("Role")
-                     .IsRequired(true)
-                     .HasDefaultValue("student")
-                     .HasMaxLength(100);
+                   .HasColumnName("Role")
+                   .IsRequired()
+                   .HasDefaultValue("student")
+                   .HasMaxLength(100);
+
+            builder.Property(u => u.OtpCode)
+                   .HasColumnName("OtpCode")
+                   .IsRequired(false)
+                   .HasMaxLength(20);
+
+            builder.Property(u => u.OtpExpiryTime)
+                   .HasColumnName("OtpExpiryTime")
+                   .IsRequired(false);
+
+            builder.Property(u => u.OtpIsUsed)
+                   .HasColumnName(" OtpIsUsed")
+                   .HasDefaultValue(false)
+                   .IsRequired();
+
 
             builder.Property(u => u.CreatedDate)
-                 .HasColumnName("CreatedDate")
-                 .IsRequired()
-                 .HasDefaultValueSql("GETDATE()");
+                   .HasColumnName("CreatedDate")
+                   .IsRequired()
+                   .HasDefaultValueSql("GETDATE()");
 
             builder.Property(u => u.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -74,12 +92,12 @@ namespace PMS.Data.FluentAPI
             builder.Property(u => u.IsActive)
                    .HasColumnName("IsActive")
                    .HasDefaultValue(true)
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(u => u.IsDeleted)
                    .HasColumnName("IsDeleted")
                    .HasDefaultValue(false)
-                   .IsRequired(true);
+                   .IsRequired();
 
             //Index Configuration
             builder.HasIndex(u => u.Email)

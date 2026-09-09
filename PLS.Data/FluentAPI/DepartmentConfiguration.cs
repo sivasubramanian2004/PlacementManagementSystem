@@ -19,6 +19,9 @@ namespace PMS.Data.FluentAPI
             builder.HasKey(d => d.Id);
 
             //Property configuration
+            builder.Property(d => d.Id)
+                   .ValueGeneratedOnAdd();
+
             builder.Property(d => d.Name)
                    .HasColumnName("DepartmentName")
                    .IsRequired()
@@ -63,12 +66,12 @@ namespace PMS.Data.FluentAPI
             builder.Property(d => d.IsActive)
                    .HasColumnName("IsActive")
                    .HasDefaultValue(true)
-                   .IsRequired(true);
+                   .IsRequired();
 
             builder.Property(d => d.IsDeleted)
                    .HasColumnName("IsDeleted")
                    .HasDefaultValue(false)
-                   .IsRequired(true);
+                   .IsRequired();
 
             //Index Configuration
             builder.HasIndex(d => d.Name)

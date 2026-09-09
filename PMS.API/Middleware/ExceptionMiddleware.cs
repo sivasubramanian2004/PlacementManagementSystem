@@ -35,11 +35,11 @@ namespace PMS.API.Middleware
             // Map exception type -> status code + client-safe message
             var (statusCode, message) = ex switch
             {
-                KeyNotFoundException => (HttpStatusCode.NotFound, ex.Message),
-                ArgumentNullException => (HttpStatusCode.NotFound, "The requested resource was not found."),  // ✅ added
-                InvalidOperationException => (HttpStatusCode.Conflict, ex.Message),
-                ArgumentException => (HttpStatusCode.BadRequest, ex.Message),
-                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "You are not authorized to perform this action."),
+                KeyNotFoundException => (HttpStatusCode.NotFound, ex.Message),//404
+                ArgumentNullException => (HttpStatusCode.NotFound, "The requested resource was not found."),  // ✅ added 404
+                InvalidOperationException => (HttpStatusCode.Conflict, ex.Message), // 409
+                ArgumentException => (HttpStatusCode.BadRequest, ex.Message), //400
+                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, ex.Message), //401
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again later.")
             };
 
