@@ -1,14 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PMS.Core.Helpers;
+using Microsoft.AspNetCore.RateLimiting;
 using PMS.Core.DTOs.Auth;
+using PMS.Core.Helpers;
 using PMS.Service.Authentication;
 namespace PMS.API.Controllers
 {
 
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseController
     {
 
         
@@ -19,8 +20,11 @@ namespace PMS.API.Controllers
             _authService = authService;
         }
 
-        [AllowAnonymous]
+        
         [HttpPost("register")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth-3")]
+
         public async Task<IActionResult> Register([FromBody] AuthRequestDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
@@ -36,14 +40,15 @@ namespace PMS.API.Controllers
 
             return StatusCode(201, response);
         }
-
-        [AllowAnonymous]
+        
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        [AllowAnonymous]
+        [EnableRateLimiting("auth-5")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
             var result = await _authService.LoginAsync(dto);
 
-            var response = new ApiResponse<AuthResponseDto>
+            var response = new ApiResponse<LoginResponseDto>
             {
                 Success = true,
                 Message = "Login successful",
@@ -54,8 +59,9 @@ namespace PMS.API.Controllers
 
             return Ok(response);
         }
+        
+        [HttpPatch("Update-Auth/{id:int}")]
         [Authorize]
-        [HttpPut("Update-Auth/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] AuthUpdateDto dto)
         {
 
@@ -71,8 +77,10 @@ namespace PMS.API.Controllers
             return Ok(response);
         }
 
-        [AllowAnonymous]
+        
         [HttpPost("Forget-Password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth-3")]
         public async Task<IActionResult> ForgetPassword([FromBody] ForgotPasswordDto dto)
         {
             await _authService.ForgotPasswordAsync(dto);
@@ -86,8 +94,10 @@ namespace PMS.API.Controllers
             };
             return Ok(response);
         }
-        [AllowAnonymous]
+        
         [HttpPost("Reset-Password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth-5")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
 
@@ -98,6 +108,24 @@ namespace PMS.API.Controllers
                 Success = true,
                 Message = "Password Reset Successfully",
                 Data = null,
+                Errors = null,
+                StatusCode = 200
+            };
+            return Ok(response);
+        }
+       
+        
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] UserQueryParameters request)
+        {
+            var userId = GetCurrentUserId();
+            var user = await _authService.GetAllUsersAsync(request);
+            var response = new ApiResponse<PagedResult<UserBasicDto>>
+            {
+                Success = true,
+                Message = "Profile retrieved successfully",
+                Data = user,
                 Errors = null,
                 StatusCode = 200
             };

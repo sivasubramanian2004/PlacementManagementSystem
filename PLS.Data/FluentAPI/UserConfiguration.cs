@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PMS.Data.Entities;
+using PMS.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -45,8 +46,8 @@ namespace PMS.Data.FluentAPI
             builder.Property(u => u.Role)
                    .HasColumnName("Role")
                    .IsRequired()
-                   .HasDefaultValue("student")
-                   .HasMaxLength(100);
+                   .HasDefaultValue(UserRole.Student);
+                   
 
             builder.Property(u => u.OtpCode)
                    .HasColumnName("OtpCode")
