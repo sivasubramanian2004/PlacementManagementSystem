@@ -15,7 +15,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PLS.Service\PMS.Service.csproj" />
+    <ProjectReference Include="..\PMS.Service\PMS.Service.csproj" />
   </ItemGroup>
 
 </Project>

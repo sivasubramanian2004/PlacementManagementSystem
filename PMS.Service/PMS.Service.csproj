@@ -16,9 +16,9 @@
 	   <PackageReference Include="Mapster.DependencyInjection" Version="10.0.12" />
 	   <PackageReference Include="Mapster.EFCore" Version="10.0.12" />
 	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\PMS.Core\PMS.Core.csproj" />
-		<ProjectReference Include="..\PMS.Data\PMS.Data.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PMS.Core\PMS.Core.csproj" />
+    <ProjectReference Include="..\PMS.Data\PMS.Data.csproj" />
+  </ItemGroup>
 
 </Project>
