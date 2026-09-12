@@ -25,3 +25,11 @@ public enum Gender {
     Other=3,
 
 }
+
+public enum UserRole
+{
+    Student=1,
+    Admin=2,
+    PlacementOfficer=3,
+    Recruiter=4 
+}

@@ -1,14 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using PMS.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace PMS.Service.Authentication
+namespace PMS.Service.TokenGenerator
 {
-    public class JwtTokenGenerator
+    public class JwtTokenGenerator : IJwtTokenGenerator
     {
         private readonly IConfiguration _config;
 
@@ -17,7 +18,7 @@ namespace PMS.Service.Authentication
             _config = config;
         }
 
-        public (string token, DateTime expiresAt) GenerateToken(int userId, string email, string role, string firstName, string lastName)
+        public (string token, DateTime expiresAt) GenerateToken(int userId, string email, UserRole role, string firstName, string lastName)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"]!;
@@ -37,8 +38,8 @@ namespace PMS.Service.Authentication
             {
             new(ClaimTypes.NameIdentifier, userId.ToString()),
             new(ClaimTypes.Email, email),
-            new(ClaimTypes.Role, role),
-            new(ClaimTypes. GivenName, firstName),
+            new(ClaimTypes.Role, role.ToString()),
+            new(ClaimTypes.GivenName, firstName),
             new(ClaimTypes.Surname, lastName  ),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

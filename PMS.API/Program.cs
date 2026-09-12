@@ -1,19 +1,26 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Org.BouncyCastle.Pqc.Crypto.Lms;
+using PMS.API.Attributes;
 using PMS.API.Middleware;
 using PMS.Core.Helpers;
 using PMS.Core.Validators;
-using FluentValidation;
 using PMS.Data;
+using PMS.Data.Entities;
 using PMS.Data.Repositories;
 using PMS.Data.UnitOfWork;
 using PMS.Service.Authentication;
 using PMS.Service.Email;
+using PMS.Service.TokenGenerator;
 using Serilog;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================
@@ -65,7 +72,6 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
-
 builder.Services.AddAuthorization();
 
 
@@ -74,13 +80,13 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddSingleton<JwtTokenGenerator>();
 
+builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddHttpContextAccessor();   // add this, if not already there
 // already covered via open-generic registration
 
-//fluent validation
+//fluent validation for DTOs
 builder.Services.AddValidatorsFromAssemblyContaining<AuthRequestDtoValidator>();
 builder.Services.AddControllers(options =>
 {
@@ -91,6 +97,7 @@ builder.Services.AddControllers(options =>
 // 5. CONTROLLERS + SWAGGER
 // ============================
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -119,6 +126,22 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
+/* Add JSON options to ignore null values in the response
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.DefaultIgnoreCondition =
+            JsonIgnoreCondition.WhenWritingNull;
+    });
+*/
+
+//Keep DTO enum and configure JSON enum serialization
+builder.Services.AddControllers()
+     .AddJsonOptions(options =>
+      {
+          options.JsonSerializerOptions.Converters.Add(
+              new JsonStringEnumConverter());
+      });
 
 // ============================
 // 6. CORS (allow frontend to call this API)
@@ -129,6 +152,65 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
+});
+
+/*PartitionedRateLimiter 5 minutes per user (IP address) for login attempts
+User A → 5 login attempts/minute ✅
+User B → 5 login attempts/minute ✅
+User C → 5 login attempts/minute ✅
+*/
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Login + Reset Password
+    options.AddPolicy("auth-5", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                          ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Register + Forgot Password
+    options.AddPolicy("auth-3", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                          ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Global limiter for normal APIs
+    options.GlobalLimiter =
+        PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            // Auth endpoints skip global limiter
+            if (httpContext.GetEndpoint()?
+                .Metadata
+                .GetMetadata<SkipGlobalRateLimitAttribute>() is not null)
+            {
+                return RateLimitPartition.GetNoLimiter("auth-endpoint");
+            }
+
+            // Normal APIs → 100 requests/min/IP
+            return RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
 });
 
 var app = builder.Build();
@@ -159,7 +241,7 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors("AllowAll");
-
+app.UseRateLimiter();
 app.UseAuthentication();           // must come BEFORE Authorization
 app.UseAuthorization();
 

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace PMS.Core.Validators
 {
-    public class LoginDtoValidator : AbstractValidator<LoginDto>
+    public class LoginDtoValidator : AbstractValidator<LoginRequestDto>
     {
         public LoginDtoValidator()
         {

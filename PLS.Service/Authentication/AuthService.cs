@@ -1,13 +1,19 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMS.Core.DTOs.Auth;
+using PMS.Core.Helpers;
 using PMS.Data.Entities;
 using PMS.Data.Repositories;
 using PMS.Service.Email;
+using PMS.Service.TokenGenerator;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace PMS.Service.Authentication
 {
@@ -15,11 +21,11 @@ namespace PMS.Service.Authentication
         public class AuthService : IAuthService
         {
             private readonly IRepository<User> _userRepo;
-            private readonly JwtTokenGenerator _jwtGenerator;
+            private readonly IJwtTokenGenerator _jwtGenerator;
             private readonly IEmailService _emailService;
             private readonly ILogger<AuthService> _logger;
 
-            public AuthService(IRepository<User> userRepo, JwtTokenGenerator jwtGenerator, IEmailService emailService, ILogger<AuthService> logger)
+            public AuthService(IRepository<User> userRepo, IJwtTokenGenerator jwtGenerator, IEmailService emailService, ILogger<AuthService> logger)
             {
                 _userRepo = userRepo;
                 _jwtGenerator = jwtGenerator;
@@ -42,7 +48,7 @@ namespace PMS.Service.Authentication
                     LastName = dto.LastName,
                     Email = dto.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                    Role = "Student",              // ← always forced, never trust client input
+                    Role = UserRole.Student,             // ← always forced, never trust client input
                     CreatedDate = DateTime.UtcNow
                 };
 
@@ -142,18 +148,18 @@ namespace PMS.Service.Authentication
                     FirstName = savedUser.FirstName,
                     LastName = savedUser.LastName,
                     Email = savedUser.Email,
-                    Role = savedUser.Role,
+                    Role = savedUser.Role.ToString(),
 
             };
         }
 
-            public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
+            public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
             {
                 var user = await _userRepo.TableNoTracking
                     .FirstOrDefaultAsync(u => u.Email == dto.Email && u.IsDeleted != true);
 
                 if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                    throw new KeyNotFoundException("Invalid email or password.");   // → 404 (deliberately vague — don't reveal WHICH part was wrong)
+                    throw new UnauthorizedAccessException("Invalid email or password.");   // → 404 (deliberately vague — don't reveal WHICH part was wrong)
 /*
                 if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
                     throw new UnauthorizedAccessException("Invalid email or password.");   // same vague message — security best practice
@@ -165,11 +171,9 @@ namespace PMS.Service.Authentication
 
                 _logger.LogInformation("user logged in: {Email}, UserId: {UserId} successfully", user.Email, user.Id);
 
-                return new AuthResponseDto
+                return new LoginResponseDto
                 {
                     UserId = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
                     Email = user.Email,
                     Role = user.Role,
                     Token = token,
@@ -180,13 +184,20 @@ namespace PMS.Service.Authentication
         public async Task UpdateAsync(int id, AuthUpdateDto dto)
         {
             var user = await _userRepo.Table
-                      .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
 
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
 
-            user.FirstName = dto.FirstName;
-            user.LastName = dto.LastName;
+            if (!string.IsNullOrWhiteSpace(dto.FirstName))
+            {
+                user.FirstName = dto.FirstName.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.LastName))
+            {
+                user.LastName = dto.LastName.Trim();
+            }
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
@@ -194,17 +205,16 @@ namespace PMS.Service.Authentication
                     BCrypt.Net.BCrypt.HashPassword(dto.Password);
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.Role))
-            {
-                var role = dto.Role.ToString().Trim();
-                user.Role = role;
+            if (dto.Role.HasValue) { 
+              
+                user.Role=dto.Role.Value;
+            
             }
 
             user.UpdatedDate = DateTime.UtcNow;
-            user.UpdatedBy = id; // Assuming the user is updating their own details
-            await _userRepo.UpdateAsync(user);
+            user.UpdatedBy = id;
 
-            
+            await _userRepo.UpdateAsync(user);
         }
 
         public async Task ForgotPasswordAsync(ForgotPasswordDto dto)
@@ -312,9 +322,9 @@ namespace PMS.Service.Authentication
             if (user == null)
                 throw new KeyNotFoundException("No account registered with Email.");
             if (user.OtpCode != dto.OtpCode || user.OtpIsUsed == true)
-                throw new KeyNotFoundException("Invalid otp");
+                throw new ArgumentException("Invalid OTP.");
             if (user.OtpExpiryTime == null || user.OtpExpiryTime < DateTime.UtcNow)
-                throw new InvalidOperationException("OTP has expired. Please request a new one.");
+                throw new ArgumentException("OTP has expired. Please request a new one.");
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             // Mark OTP as used — prevent reuse
             user.OtpIsUsed = true;
@@ -399,7 +409,89 @@ namespace PMS.Service.Authentication
 
         }
 
+        public async Task<PagedResult<UserBasicDto>> GetAllUsersAsync( UserQueryParameters request)
+        {
+            var query =  _userRepo.TableNoTracking.Where(u => !u.IsDeleted);
 
+            //Global Searching across multiple fields such as firstname, lastname, email, role
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var searchTerm = request.SearchTerm.Trim();
+
+                query = query.Where(u =>
+                        u.FirstName.Contains(searchTerm) ||
+                        u.LastName.Contains(searchTerm) ||
+                        u.Email.Contains(searchTerm));
+                   
+            }
+            /*searching
+            if (!string.IsNullOrWhiteSpace(request.FirstName))
+            {
+                var firstName = request.FirstName.Trim();
+                query = query.Where(e => e.FirstName.Contains(firstName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.LastName))
+            {
+                var lastName = request.LastName.Trim();
+                query = query.Where(e => e.LastName.Contains(lastName));
+            }
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                var email = request.Email.Trim();
+                query = query.Where(e => e.Email.Contains(email));
+            }
+            */
+            //filtering
+            if (request.Role.HasValue)
+            {
+                var role = request.Role.Value;
+                query = query.Where(u => u.Role == role);
+            }
+            if (request.IsActive.HasValue)
+            {
+                query = query.Where(e => e.IsActive == request.IsActive.Value);
+            }
+            //Created Date From
+            if (request.CreatedFrom.HasValue)
+            {
+                var fromDate = request.CreatedFrom.Value
+                    .ToDateTime(TimeOnly.MinValue);
+
+                query = query.Where(c =>
+                    c.CreatedDate >= fromDate);
+            }
+
+            // Created Date To
+            if (request.CreatedTo.HasValue)
+            {
+                var toDate = request.CreatedTo.Value
+                    .AddDays(1)
+                    .ToDateTime(TimeOnly.MinValue);
+
+                query = query.Where(c =>
+                    c.CreatedDate < toDate);
+            }
+
+            //sorting using dictionary
+            var sortOptions = new Dictionary<string, Expression<Func<User, object?>>>
+            {
+                ["firstname"] = e => e.FirstName,
+                ["lastname"] = e => e.LastName,
+                ["email"] = e => e.Email,
+                ["role"] = e => e.Role,
+                ["createddate"] = e => e.CreatedDate
+            };
+
+            query = query.ApplySorting(request, sortOptions, defaultSort: e => (object?)e.Id);
+
+            //Mapster projection to DTO
+            var resultQuery = query.ProjectToType<UserBasicDto>();
+
+            return await resultQuery.ToPagedResultAsync(request);
+        }
 
     }
 }
+
+

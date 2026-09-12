@@ -13,7 +13,7 @@ namespace PMS.Data.Entities
 
         public string PasswordHash { get; set; } = string.Empty;
 
-        public string Role { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
 
         public string? OtpCode { get; set; }
 
