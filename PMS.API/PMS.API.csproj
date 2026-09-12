@@ -20,10 +20,10 @@
 	              
     </ItemGroup>
 
-   <ItemGroup>
-     <ProjectReference Include="..\PLS.Core\PMS.Core.csproj" />
-     <ProjectReference Include="..\PLS.Data\PMS.Data.csproj" />
-     <ProjectReference Include="..\PLS.Service\PMS.Service.csproj" />
-   </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\PMS.Core\PMS.Core.csproj" />
+		<ProjectReference Include="..\PMS.Data\PMS.Data.csproj" />
+		<ProjectReference Include="..\PMS.Service\PMS.Service.csproj" />
+	</ItemGroup>
 
 </Project>

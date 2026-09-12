@@ -20,7 +20,7 @@
 </ItemGroup>
 	
 <ItemGroup>
-    <ProjectReference Include="..\PLS.Core\PMS.Core.csproj" />
+    <ProjectReference Include="..\PMS.Core\PMS.Core.csproj" />
 
 </ItemGroup>
 	

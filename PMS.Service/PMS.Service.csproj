@@ -17,8 +17,8 @@
 	   <PackageReference Include="Mapster.EFCore" Version="10.0.12" />
 	</ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PLS.Core\PMS.Core.csproj" />
-    <ProjectReference Include="..\PLS.Data\PMS.Data.csproj" />
+    <ProjectReference Include="..\PMS.Core\PMS.Core.csproj" />
+    <ProjectReference Include="..\PMS.Data\PMS.Data.csproj" />
   </ItemGroup>
 
 </Project>
