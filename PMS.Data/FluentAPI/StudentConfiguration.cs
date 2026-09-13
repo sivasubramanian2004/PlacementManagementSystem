@@ -46,12 +46,6 @@ namespace PMS.Data.FluentAPI
                    .IsRequired(false)
                    .HasMaxLength(500);
 
-            builder.Property(s => s.Phone)
-                   .HasColumnName("Phone")
-                   .IsRequired(false)
-                   .HasMaxLength(30);
-
-
             builder.Property(s => s.PlacementStatus)
                    .HasColumnName(" PlacementStatus")
                    .IsRequired();

@@ -15,7 +15,10 @@ using PMS.Data.Entities;
 using PMS.Data.Repositories;
 using PMS.Data.UnitOfWork;
 using PMS.Service.Authentication;
+using PMS.Service.Departments;
 using PMS.Service.Email;
+using PMS.Service.FileStorage;
+using PMS.Service.Students;
 using PMS.Service.TokenGenerator;
 using Serilog;
 using System.Text;
@@ -78,11 +81,18 @@ builder.Services.AddAuthorization();
 // Add services to the container.
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUrlHelperService, UrlHelperService>();
+
 
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileSettings"));
+
 builder.Services.AddHttpContextAccessor();   // add this, if not already there
 // already covered via open-generic registration
 
