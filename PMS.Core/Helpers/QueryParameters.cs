@@ -54,7 +54,14 @@ namespace PMS.Core.Helpers
         public DateOnly? CreatedFrom { get; set; }
         public DateOnly? CreatedTo { get; set; }
     }
+    public class DepartmentQueryParameters : QueryParameters
+    {
+        public string? Name { get; set; }
+        public string? Code { get; set; }
+        public bool? IsActive { get; set; }
 
+
+    }
     public class EmployeeFilterRequest 
     {
         public string? EmpNo { get; set; }
