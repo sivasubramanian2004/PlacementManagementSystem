@@ -15,18 +15,25 @@ namespace PMS.Core.DTOs.Students
 
         public string RegisterNumber { get; set; } = string.Empty;
 
-        public string Name { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
+
+        public string FirstName { get; set; } = string.Empty;
+
+        public string LastName { get; set; } = string.Empty;
 
         public Gender Gender { get; set; }
 
         public string? Phone { get; set; }
 
+        public string Status { get; set; } = string.Empty;
         public string? ProfilePictureUrl { get; set; }
+
+        public string ResumeUrl { get; set; } = string.Empty;
 
         public PlacementStatus PlacementStatus { get; set; }
 
-        public int DepartmentId { get; set; }
-
         public string DepartmentName { get; set; } = string.Empty;
+
+        public List<EducationDto> Educations { get; set; } = new();
     }
 }

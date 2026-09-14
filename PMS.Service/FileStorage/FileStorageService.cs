@@ -108,5 +108,20 @@ namespace PMS.Service.FileStorage
             }
             return Task.CompletedTask;
         }
+        public Task<string> GetFullPath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return Task.FromResult(string.Empty);
+
+            var cleanPath = relativePath
+                .TrimStart('/')
+                .Replace(
+                    "/",
+                    Path.DirectorySeparatorChar.ToString());
+
+            var fullPath = Path.Combine(_webRootPath, cleanPath);
+
+            return Task.FromResult(fullPath);
+        }
     }
 }

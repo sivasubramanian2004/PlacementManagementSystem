@@ -14,8 +14,6 @@ namespace PMS.Data.Entities
 
         public string RegisterNumber { get; set; } = string.Empty;
 
-        public string Name { get; set; } = string.Empty;
-
         public Gender Gender { get; set; }
 
         public string? Phone { get; set; }

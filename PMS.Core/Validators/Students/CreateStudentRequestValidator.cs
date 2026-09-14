@@ -26,13 +26,6 @@ public class CreateStudentRequestValidator : AbstractValidator<CreateStudentRequ
             .Must(x => x.Trim().Length > 0)
             .WithMessage("Register number cannot contain only spaces.");
 
-        // Name
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(100)
-            .Must(x => x.Trim().Length > 0)
-            .WithMessage("Name cannot contain only spaces.");
-
         // Gender
         RuleFor(x => x.Gender)
             .IsInEnum()

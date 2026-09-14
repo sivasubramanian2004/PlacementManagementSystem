@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Mapster;
+﻿using Mapster;
 using PMS.Core.DTOs;
 using PMS.Core.DTOs.Auth;
+using PMS.Core.DTOs.Students;
 using PMS.Data.Entities;
+using System;
+using System.Collections.Generic;
+using System.Text;
 namespace PMS.Core.Mappings
 {
     public static class MapsterConfig
@@ -14,6 +15,7 @@ namespace PMS.Core.Mappings
             TypeAdapterConfig<User, UserBasicDto>
                 .NewConfig()
                 .Map(dest => dest.UserId, src => src.Id);
+
         }
     }
 }
