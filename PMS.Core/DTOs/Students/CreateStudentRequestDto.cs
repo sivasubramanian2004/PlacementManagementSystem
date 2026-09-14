@@ -13,7 +13,7 @@ namespace PMS.Core.DTOs.Students
 
         public string RegisterNumber { get; set; } = string.Empty;
 
-        public string Name { get; set; } = string.Empty;
+       // public string Name { get; set; } = string.Empty;
 
         public Gender Gender { get; set; }
 

@@ -27,8 +27,10 @@ namespace PMS.Service.Departments
         {
 
             var existsDepartment = await _departmentRepo.Table.FirstOrDefaultAsync(d => d.Name == dto.Name || d.Code == dto.Code && d.IsDeleted != true);
+          
             if (existsDepartment != null)
                 throw new InvalidOperationException($"Department {dto.Name} or {dto.Code} already existed");
+            
             var department = new Department
             {
                 Name = dto.Name.Trim().ToUpper(),
@@ -37,6 +39,7 @@ namespace PMS.Service.Departments
                 CreatedBy = CreatedBy,
 
             };
+
             var result = await _departmentRepo.InsertAsync(department);
             _logger.LogInformation($"Department {dto.Name} Added Succesfully");
 
@@ -54,6 +57,7 @@ namespace PMS.Service.Departments
         {
             var department = await _departmentRepo.Table.
                              FirstOrDefaultAsync(d => d.Id == id && d.IsDeleted != true);
+
             if (department == null)
                 throw new KeyNotFoundException($"No Department found with ID {id}");
 
@@ -61,6 +65,7 @@ namespace PMS.Service.Departments
             department.DeletedDate = DateTime.UtcNow;
             department.DeletedBy = DeletedBy;
             var result = await _departmentRepo.UpdateAsync(department);
+
             _logger.LogInformation($"Deleted Department {department.Name}");
         }
 
@@ -68,6 +73,7 @@ namespace PMS.Service.Departments
         {
             var department = await _departmentRepo.Table.
                              FirstOrDefaultAsync(d => d.Id == id && d.IsDeleted != true);
+
             if (department == null)
                 throw new KeyNotFoundException($"No Department found with ID {id}");
 
@@ -77,22 +83,30 @@ namespace PMS.Service.Departments
             // Check duplicate Code
             var codeExists = await _departmentRepo.TableNoTracking
                              .AnyAsync(d => d.Code == code && d.Id != id && d.IsDeleted != true);
+
             if (codeExists)
-                throw new InvalidOperationException(
-                    $"Department code '{code}' already exists.");
+                throw new InvalidOperationException($"Department code '{code}' already exists.");
+
             department.Name = name;
             department.Code = code;
             department.UpdatedDate = DateTime.UtcNow;
             department.UpdatedBy = UpdatedBy;
             var result = await _departmentRepo.UpdateAsync(department);
+
             _logger.LogInformation($"Updated Department {department.Name}");
         }
+
         public async Task<PagedResult<DepartmentResponseDto>> GetDepartmentsAsync(DepartmentQueryParameters request) {
 
             var query = _departmentRepo.TableNoTracking
                         .Where(d => d.IsDeleted != true);
 
+            if(query==null)
+            {
+                throw new KeyNotFoundException("No departments found.");
+            }
             //Global Searching across multiple fields such as firstname, lastname, email, role
+
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
                 var searchTerm = request.SearchTerm.Trim();
@@ -100,18 +114,21 @@ namespace PMS.Service.Departments
                 query = query.Where(d =>
                         d.Name.Contains(searchTerm) ||
                         d.Code.Contains(searchTerm));
-
             }
+
             if (request.IsActive.HasValue)
             {
                 query = query.Where(d => d.IsActive == request.IsActive.Value);
             }
+
             var sortOptions = new Dictionary<string, Expression<Func<Department, object?>>>
             {
                 ["name"] = d => d.Name,
                 ["code"] = d => d.Code
             };
+
             query = query.ApplySorting(request, sortOptions, defaultSort: e => (object?)e.Id);
+
             var resultquery = query.Select(d => new DepartmentResponseDto
             {
                 DepartmentId = d.Id,

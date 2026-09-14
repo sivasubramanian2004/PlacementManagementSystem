@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PMS.Data;
 
@@ -11,9 +12,11 @@ using PMS.Data;
 namespace PMS.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913185815_NameRemovedToStudentEnitity")]
+    partial class NameRemovedToStudentEnitity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -270,12 +273,10 @@ namespace PMS.Data.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.HasIndex("RegisterNumber")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+                        .IsUnique();
 
                     b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+                        .IsUnique();
 
                     b.ToTable("Students", (string)null);
                 });

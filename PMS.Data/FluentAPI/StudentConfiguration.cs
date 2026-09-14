@@ -27,11 +27,6 @@ namespace PMS.Data.FluentAPI
                    .IsRequired()
                    .HasMaxLength(100);
 
-            builder.Property(s => s.Name)
-                   .HasColumnName("Name")
-                   .IsRequired()
-                   .HasMaxLength(100);
-
             builder.Property(s => s.Gender)
                   .HasColumnName("Gender")
                   .IsRequired();
@@ -97,9 +92,15 @@ namespace PMS.Data.FluentAPI
                    .HasDefaultValue(false)
                    .IsRequired();
 
-            //Index Configuration
+            //Index Configuration  Only active/non-deleted records participate
             builder.HasIndex(u => u.RegisterNumber)
-                   .IsUnique(true);
+                   .IsUnique()
+                   .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+
+            // UserId unique only for active/non-deleted students
+            builder.HasIndex(s => s.UserId)
+                   .IsUnique()
+                   .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
 
             //Query Filters
             builder.HasQueryFilter(d => !d.IsDeleted);

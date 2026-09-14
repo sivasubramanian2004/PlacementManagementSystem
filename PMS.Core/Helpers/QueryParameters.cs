@@ -62,16 +62,24 @@ namespace PMS.Core.Helpers
 
 
     }
-    public class EmployeeFilterRequest 
+    public class StudentQueryParameters : QueryParameters
     {
-        public string? EmpNo { get; set; }
         public string? Email { get; set; }
-        public string? Name { get; set; }
-        public int? DepartmentId { get; set; }
-        public int? DesignationId { get; set; }
-        public int? RoleId { get; set; }
-        public string? MaritalStatus { get; set; }
 
-        public string? Phone { get; set; }
+        public string? RegisterNumber { get; set; }
+
+        public int? DepartmentId { get; set; }
+        public string? Name { get; set; }
+
+        public bool? IsActive { get; set; }
+        public UserRole? Role { get; set; }
+
+        public Gender? Gender { get; set; }
+
+        public PlacementStatus? PlacementStatus { get; set; }
+
+        public DateOnly? CreatedFrom { get; private set; }
+
+        public DateOnly? CreatedTo { get; private set; }
     }
 }

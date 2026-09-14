@@ -11,5 +11,7 @@ namespace PMS.Service.FileStorage
         Task<FileUploadResult> UploadAsync(IFormFile file, string folder);
 
         Task DeleteAsync(string fullPath);
+
+        Task<string> GetFullPath(string relativePath);
     }
 }
