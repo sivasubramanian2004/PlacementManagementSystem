@@ -82,4 +82,20 @@ namespace PMS.Core.Helpers
 
         public DateOnly? CreatedTo { get; private set; }
     }
+
+    public class CompanyQueryParameters : QueryParameters {
+
+
+        public string? CompanyName { get; set; }
+
+        public bool? IsActive { get; set; }
+
+        public DateOnly? CreatedFrom { get; set; }
+
+        public DateOnly? CreatedTo { get; set; }
+
+    }
+    
+    
+   
 }

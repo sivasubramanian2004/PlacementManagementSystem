@@ -9,17 +9,15 @@ namespace PMS.Core.Helpers
 
     public static class IQueryableExtensions
     {
-        public static async Task<PagedResult<T>> ToPagedResultAsync<T>(
-            this IQueryable<T> query,
-            QueryParameters request,
-            CancellationToken cancellationToken = default)
+        public static async Task<PagedResult<T>> ToPagedResultAsync<T>(this IQueryable<T> query, QueryParameters request,
+        CancellationToken cancellationToken = default)
         {
             var totalRecords = await query.CountAsync(cancellationToken);
 
             var items = await query
-                .Skip(request.Skip)
-                .Take(request.PageSize)
-                .ToListAsync(cancellationToken);
+                        .Skip(request.Skip)
+                        .Take(request.PageSize)
+                        .ToListAsync(cancellationToken);
 
             return new PagedResult<T>
             {
@@ -30,11 +28,8 @@ namespace PMS.Core.Helpers
             };
         }
 
-        public static IQueryable<T> ApplySorting<T>(
-            this IQueryable<T> query,
-            QueryParameters request,
-            Dictionary<string, Expression<Func<T, object?>>> sortOptions,
-            Expression<Func<T, object?>> defaultSort)
+        public static IQueryable<T> ApplySorting<T>(this IQueryable<T> query, QueryParameters request,
+        Dictionary<string, Expression<Func<T, object?>>> sortOptions, Expression<Func<T, object?>> defaultSort)
         {
             if (string.IsNullOrWhiteSpace(request.SortBy))
                 return query.OrderBy(defaultSort);

@@ -75,7 +75,9 @@ namespace PMS.Data.FluentAPI
 
             //Index Configuration
             builder.HasIndex(d => d.Name)
-                   .IsUnique(true);
+                   .IsUnique();
+
+            builder.HasIndex(d=>d.Code).IsUnique();
 
             //Query Filters
             builder.HasQueryFilter(d => !d.IsDeleted);
