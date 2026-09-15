@@ -69,3 +69,12 @@ public enum PlacementDriveStatus
     Closed = 3,
     Cancelled = 4
 }
+
+public enum ApplicationStatus
+{
+    Applied = 1,
+    Shortlisted = 2,
+    Rejected = 3,
+    Selected = 4,
+    Withdrawn = 5
+}
