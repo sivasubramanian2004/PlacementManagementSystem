@@ -30,12 +30,13 @@ namespace PMS.Service.Companies
 
         public async Task<CompanyResponseDto> InsertAsync(CreateCompanyRequestDto dto, int CreatedBy) { 
         
-        
-           var Company=await _companyRepo.TableNoTracking
-                       .Where(x => x.Name == dto.Name)
-                       .FirstOrDefaultAsync();
+          var name = dto.Name.Trim();
 
-           if(Company!=null)
+            var Company=await _companyRepo.TableNoTracking
+                       .Where(x => x.Name == dto.Name)
+                       .AnyAsync();
+
+           if(Company)
                      throw new KeyNotFoundException($"Company with name {dto.Name} already exists.");
 
             var newCompany = new Company
@@ -134,17 +135,14 @@ namespace PMS.Service.Companies
         }
 
 
-        public async Task UpdateAsync(
-    int id,
-    UpdateCompanyRequestDto dto,
-    int updatedBy)
+        public async Task UpdateAsync(int id, UpdateCompanyRequestDto dto, int updatedBy)
         {
             var company = await _companyRepo.Table
-                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                          .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
 
             if (company == null)
-                throw new KeyNotFoundException(
-                    $"Company with id {id} not found.");
+                throw new KeyNotFoundException($"Company with id {id} not found.");
+
 
             // Name
             if (dto.Name != null)
@@ -152,14 +150,10 @@ namespace PMS.Service.Companies
                 var name = dto.Name.Trim();
 
                 if (string.IsNullOrWhiteSpace(name))
-                    throw new ArgumentException(
-                        "Company name cannot be empty or contain only spaces.");
+                    throw new ArgumentException("Company name cannot be empty or contain only spaces.");
 
                 var existingCompany = await _companyRepo.TableNoTracking
-                    .FirstOrDefaultAsync(c =>
-                        c.Id != id &&
-                        !c.IsDeleted &&
-                        c.Name == name);
+                                     .FirstOrDefaultAsync(c => c.Id != id && !c.IsDeleted && c.Name == name);
 
                 if (existingCompany != null)
                 {
@@ -189,8 +183,7 @@ namespace PMS.Service.Companies
                         "OtherIndustry cannot be empty.");
 
                 if (company.IndustryType != IndustryType.Others)
-                    throw new ArgumentException(
-                        "OtherIndustry can only be provided when IndustryType is Others.");
+                    throw new ArgumentException("OtherIndustry can only be provided when IndustryType is Others.");
 
                 company.OtherIndustry = dto.OtherIndustry.Trim();
             }
@@ -234,6 +227,7 @@ namespace PMS.Service.Companies
             company.UpdatedDate = DateTime.UtcNow;
 
             await _unitOfWork.SaveChangesAsync();
+
             _logger.LogInformation("Company with id {id} updated successfully.", id);
         }
 
@@ -241,25 +235,22 @@ namespace PMS.Service.Companies
         public async Task DeleteAsync(int id, int deletedBy)
         {
             var company = await _companyRepo.Table
-                .FirstOrDefaultAsync(c =>
-                    c.Id == id &&
-                    !c.IsDeleted);
+                         .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
 
             if (company == null)
-                throw new KeyNotFoundException(
-                    $"Company with id {id} not found.");
+                throw new KeyNotFoundException($"Company with id {id} not found.");
+
 
             company.IsDeleted = true;
+            company.IsActive = false;
             company.DeletedDate = DateTime.UtcNow;
             company.DeletedBy = deletedBy;
 
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Company {CompanyId} - {CompanyName} deleted by {DeletedBy}",
-                company.Id,
-                company.Name,
-                deletedBy);
+                "Company {CompanyId} - {CompanyName} deleted by {DeletedBy}", company.Id, company.Name, deletedBy);
+
         }
     }
     

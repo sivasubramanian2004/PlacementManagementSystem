@@ -25,16 +25,22 @@ namespace PMS.Service.Departments
 
         public async Task<DepartmentResponseDto> InsertAsync(CreateDepartmentRequestDto dto, int CreatedBy)
         {
+            var name = dto.Name.Trim().ToUpperInvariant();
+            var code = dto.Code.Trim().ToUpperInvariant();
 
-            var existsDepartment = await _departmentRepo.Table.FirstOrDefaultAsync(d => d.Name == dto.Name || d.Code == dto.Code && d.IsDeleted != true);
-          
-            if (existsDepartment != null)
-                throw new InvalidOperationException($"Department {dto.Name} or {dto.Code} already existed");
-            
+            var existsDepartment = await _departmentRepo.TableNoTracking
+                                  .AnyAsync(d => !d.IsDeleted && (d.Name == name || d.Code == code));
+
+            if (existsDepartment)
+            {
+                throw new InvalidOperationException(
+                    $"Department '{dto.Name}' or code '{dto.Code}' already exists.");
+            }
+
             var department = new Department
             {
-                Name = dto.Name.Trim().ToUpper(),
-                Code = dto.Code.Trim().ToUpper(),
+                Name = dto.Name.Trim().ToUpperInvariant(),
+                Code = dto.Code.Trim().ToUpperInvariant(),
                 CreatedDate = DateTime.Now,
                 CreatedBy = CreatedBy,
 
@@ -62,6 +68,7 @@ namespace PMS.Service.Departments
                 throw new KeyNotFoundException($"No Department found with ID {id}");
 
             department.IsDeleted = true;
+            department.IsActive = false;
             department.DeletedDate = DateTime.UtcNow;
             department.DeletedBy = DeletedBy;
             var result = await _departmentRepo.UpdateAsync(department);
@@ -82,10 +89,10 @@ namespace PMS.Service.Departments
 
             // Check duplicate Code
             var codeExists = await _departmentRepo.TableNoTracking
-                             .AnyAsync(d => d.Code == code && d.Id != id && d.IsDeleted != true);
+                             .AnyAsync(d => (d.Code == code || d.Name == name) && d.Id != id && d.IsDeleted != true);
 
             if (codeExists)
-                throw new InvalidOperationException($"Department code '{code}' already exists.");
+                throw new InvalidOperationException($"Department code '{code}' or name '{name}' already exists.");
 
             department.Name = name;
             department.Code = code;

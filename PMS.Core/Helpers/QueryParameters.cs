@@ -95,7 +95,29 @@ namespace PMS.Core.Helpers
         public DateOnly? CreatedTo { get; set; }
 
     }
-    
-    
-   
+    public class PlacementDriveQueryParameters : QueryParameters
+    {    
+       
+        public EmploymentType? EmploymentType { get; set; }
+
+        public WorkMode? WorkMode { get; set; }
+
+        public string? Location { get; set; }
+
+        public int? GraduationYear { get; set; }
+
+        public DateOnly? ApplicationDeadline { get; set; }
+
+        public DateOnly? DriveDate { get; set; }
+
+        public PlacementDriveStatus? DriveStatus { get; set; }
+
+        public bool? IsActive { get; set; }
+
+        public int? DepartmentId { get; set; }
+
+        public int? CompanyId { get; set; }
+    }
+
+
 }
