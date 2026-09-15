@@ -27,8 +27,8 @@ namespace PMS.Data.FluentAPI
                    .HasMaxLength(150);
             
             builder.HasIndex(c => c.Name)
-                   .IsUnique();
-
+                   .IsUnique()
+                   .HasFilter("[IsDeleted] = 0");
             // Industry
             builder.Property(c => c.IndustryType)
                    .HasColumnName("IndustryType")

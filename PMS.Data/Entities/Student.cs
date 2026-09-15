@@ -32,7 +32,7 @@ namespace PMS.Data.Entities
 
         public User User { get; set; } = null!;
 
-        //  public ICollection<Application> Applications { get; set; } = new List<Application>();
+        public ICollection<Application> Applications { get; set; } = new List<Application>();
 
         public ICollection<EducationDetails> Educations { get; set; } = new List<EducationDetails>();
     }
