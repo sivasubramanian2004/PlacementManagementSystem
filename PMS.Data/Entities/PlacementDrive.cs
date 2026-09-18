@@ -35,8 +35,8 @@ public class PlacementDrive : BaseEntity
     // Navigation Properties
     public Company Company { get; set; } = null!;
 
- //   public ICollection<Application> Applications { get; set; }
-   //     = new List<Application>();
+   public ICollection<Application> Applications { get; set; }
+        = new List<Application>();
 
     public ICollection<PlacementDriveDepartment> PlacementDriveDepartments { get; set; }
         = new List<PlacementDriveDepartment>();

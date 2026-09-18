@@ -104,7 +104,7 @@ namespace PMS.API.Controllers
         }
 
         [HttpPatch]
-        [Route("update-Department/{id:int}")]
+        [Route("update-Student/{id:int}")]
         [Authorize]
         public async Task<IActionResult> UpdateStudent(int id, [FromForm] UpdateStudentRequestDto dto)
         {

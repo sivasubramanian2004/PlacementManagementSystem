@@ -14,11 +14,14 @@ using PMS.Data;
 using PMS.Data.Entities;
 using PMS.Data.Repositories;
 using PMS.Data.UnitOfWork;
+using PMS.Service.Applicationss;
 using PMS.Service.Authentication;
 using PMS.Service.Companies;
+using PMS.Service.Dashboard;
 using PMS.Service.Departments;
 using PMS.Service.Email;
 using PMS.Service.FileStorage;
+using PMS.Service.PlacementDrives;
 using PMS.Service.Students;
 using PMS.Service.TokenGenerator;
 using Serilog;
@@ -87,6 +90,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IPlacementDriveService, PlacementDriveService>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUrlHelperService, UrlHelperService>();
 

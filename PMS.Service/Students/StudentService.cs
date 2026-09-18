@@ -437,11 +437,15 @@ namespace PMS.Service.Students
         public async Task<int> GetStudentId(int userId)
         {
             var studentId = await _studentRepo.TableNoTracking
-                           .Where(s => s.UserId == userId)
-                           .Select(s => s.Id)
-                           .FirstOrDefaultAsync();
+                            .Where(s => s.UserId == userId && !s.IsDeleted)
+                            .Select(s => (int?)s.Id)
+                            .FirstOrDefaultAsync();
 
-            return studentId;
+            if (!studentId.HasValue)
+                throw new KeyNotFoundException(
+                    "Student profile not found for the current user.");
+
+            return studentId.Value;
         }
         public async Task<StudentBasicDto> GetMyProfileAsync(int StudentId)
         {
@@ -594,6 +598,7 @@ namespace PMS.Service.Students
                 // =====================================================
                 if (registerNumber != null)
                 {
+                  
                     student.RegisterNumber = registerNumber;
                 }
 

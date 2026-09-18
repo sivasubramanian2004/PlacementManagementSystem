@@ -111,6 +111,9 @@ namespace PMS.Data.FluentAPI
                    .WithOne(pd => pd.Company)
                    .HasForeignKey(pd => pd.CompanyId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            //Query Filters
+            builder.HasQueryFilter(d => !d.IsDeleted);
         }
     }
 }

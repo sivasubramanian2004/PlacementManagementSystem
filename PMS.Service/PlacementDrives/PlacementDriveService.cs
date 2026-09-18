@@ -43,11 +43,11 @@ namespace PMS.Service.PlacementDrives
         public async Task<PlacementDriveResponseDto> CreateAsync(CreatePlacementDriveRequestDto dto, int createdBy)
         {
             // Check Company
-            var companyExists = await _companyRepo.TableNoTracking
-                               .AnyAsync(c => c.Id == dto.CompanyId &
+            var company = await _companyRepo.TableNoTracking
+                               .FirstOrDefaultAsync(c => c.Id == dto.CompanyId &
                                !c.IsDeleted && c.IsActive);
 
-            if (!companyExists)
+            if (company==null)
                 throw new KeyNotFoundException($"Company with id {dto.CompanyId} not found or inactive.");
 
 
@@ -68,7 +68,7 @@ namespace PMS.Service.PlacementDrives
 
             var placementDrive = new PlacementDrive
             {
-                CompanyId = dto.CompanyId,
+                CompanyId = company.Id,
                 JobTitle = dto.JobTitle.Trim(),
                 JobDescription = dto.JobDescription.Trim(),
                 EmploymentType = dto.EmploymentType,
@@ -108,7 +108,7 @@ namespace PMS.Service.PlacementDrives
             return new PlacementDriveResponseDto
             {
                 PlacementDriveId = placementDrive.Id,
-                CompanyName = placementDrive.Company.Name,
+                CompanyName = company.Name,
                 JobTitle = placementDrive.JobTitle,
                 JobDescription = placementDrive.JobDescription,
                 EmploymentType = placementDrive.EmploymentType,
@@ -273,16 +273,31 @@ namespace PMS.Service.PlacementDrives
 
         public async Task DeleteAsync(int id, int deletedBy) { 
          
-            var Drive=await _placementDriveRepo.Table.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            var Drive=await _placementDriveRepo.Table
+                .Include(p => p.PlacementDriveDepartments)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
             if (Drive == null) {
-                throw new KeyNotFoundException("Placement drive not found.");
+                throw new KeyNotFoundException($"Placement drive {id} not found.");
             }
+
+            var deletedDate = DateTime.UtcNow;
 
             Drive.IsDeleted = true;
             Drive.IsActive = false;
             Drive.DeletedBy = deletedBy;
-            Drive.DeletedDate = DateTime.UtcNow;
+            Drive.DeletedDate = deletedDate;
+
+            var PlaceMentDriveDept = Drive.PlacementDriveDepartments
+                                   .Where(p => !p.IsDeleted).ToList();
+
+            foreach (var depts in PlaceMentDriveDept)
+            {
+                depts.IsDeleted = true;
+                depts.IsActive = false;
+                depts.DeletedDate = deletedDate;
+                depts.DeletedBy = deletedBy;
+            }
 
             await _unitOfWork.SaveChangesAsync();
 

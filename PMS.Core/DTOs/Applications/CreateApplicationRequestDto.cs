@@ -4,7 +4,8 @@ using System.Text;
 
 namespace PMS.Core.DTOs.Applications
 {
-    internal class CreateApplicationRequestDto
+    public class CreateApplicationRequestDto
     {
+        public int PlacementDriveId { get; set; }
     }
 }

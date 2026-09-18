@@ -86,8 +86,6 @@ namespace PMS.Core.Helpers
     public class CompanyQueryParameters : QueryParameters {
 
 
-        public string? CompanyName { get; set; }
-
         public bool? IsActive { get; set; }
 
         public DateOnly? CreatedFrom { get; set; }
@@ -119,5 +117,21 @@ namespace PMS.Core.Helpers
         public int? CompanyId { get; set; }
     }
 
+    public class ApplicationQueryParameters : QueryParameters
+    {
+        public ApplicationStatus? Status { get; set; }
+
+        public string? ApplicationNumber { get; set; }
+
+        public string? RegisterNumber { get; set; }
+
+        public int? DepartmentId { get; set; }
+
+        public DateOnly? AppliedFrom { get; set; }
+
+        public DateOnly? AppliedTo { get; set; }
+
+        public int? PlacementDriveId { get; set; }
+    }
 
 }
