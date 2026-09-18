@@ -15,17 +15,17 @@ namespace PMS.Service.FileStorage
         private readonly FileSettings _fileSettings;
         private readonly ILogger<FileStorageService> _logger;
 
-        public FileStorageService(
+            public FileStorageService(
             IWebHostEnvironment env,
             IOptions<FileSettings> fileSettings,
             ILogger<FileStorageService> logger)
-        {
+            {
             _webRootPath = env.WebRootPath
                            ?? Path.Combine(env.ContentRootPath, "wwwroot");
 
             _fileSettings = fileSettings.Value;
             _logger = logger;
-        }
+            }
 
         public async Task<FileUploadResult> UploadAsync(IFormFile file, string folder)
         {
