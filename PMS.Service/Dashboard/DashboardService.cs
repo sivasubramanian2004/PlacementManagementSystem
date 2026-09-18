@@ -32,19 +32,19 @@ namespace PMS.Service.Dashboard
         }
 
         public async Task<DashboardResponseDto> GetDashboardAsync(
-            DashboardQueryParameters request)
+        DashboardQueryParameters request)
         {
             // =========================================================
             // 1. Student Query
             // =========================================================
 
-            var studentQuery = _studentRepo.TableNoTracking
-                .Where(s => !s.IsDeleted);
+            var studentQuery = _studentRepo.TableNoTracking.Where(s => !s.IsDeleted);
+
 
             if (request.Gender.HasValue)
             {
-                studentQuery = studentQuery
-                    .Where(s => s.Gender == request.Gender.Value);
+                studentQuery = studentQuery.Where(s => s.Gender == request.Gender.Value);
+
             }
 
             if (request.PlacementStatus.HasValue)
