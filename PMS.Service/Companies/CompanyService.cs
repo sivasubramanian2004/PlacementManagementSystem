@@ -15,10 +15,9 @@ namespace PMS.Service.Companies
 {
     public  class CompanyService : ICompanyService
     {
-       private readonly IRepository<Company> _companyRepo;
-       private readonly ILogger<CompanyService> _logger;
-
-       private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<Company> _companyRepo;
+        private readonly ILogger<CompanyService> _logger;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CompanyService(IRepository<Company> companyRepo, ILogger<CompanyService> logger, IUnitOfWork unitOfWork)
         {
@@ -26,8 +25,6 @@ namespace PMS.Service.Companies
             _logger = logger;
             _unitOfWork = unitOfWork;
         }
-
-
         public async Task<CompanyResponseDto> InsertAsync(CreateCompanyRequestDto dto, int CreatedBy) { 
         
           var name = dto.Name.Trim();
@@ -59,7 +56,7 @@ namespace PMS.Service.Companies
 
             return new CompanyResponseDto
             {
-
+                Id=result.Id,
                 Name = result.Name,
                 IndustryType = result.IndustryType,
                 Email = result.Email
@@ -70,13 +67,8 @@ namespace PMS.Service.Companies
         public async Task<PagedResult<CompanyBasicDto>> GetCompanyAsnyc(CompanyQueryParameters request)
         {
 
-            var query = _companyRepo.TableNoTracking
-                         .Where(c => c.IsDeleted != true);
-
-            if (query == null)
-            {
-                throw new KeyNotFoundException("No Company found.");
-            }
+             var query = _companyRepo.TableNoTracking;
+                         
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
@@ -129,7 +121,6 @@ namespace PMS.Service.Companies
                 Location = c.Location,
                 IsActive = c.IsActive,
                 CreatedDate = c.CreatedDate
-
             });
             return await result.ToPagedResultAsync(request);
         }

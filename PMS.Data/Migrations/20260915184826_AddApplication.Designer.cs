@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PMS.Data;
 
@@ -11,9 +12,11 @@ using PMS.Data;
 namespace PMS.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260915184826_AddApplication")]
+    partial class AddApplication
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,11 +32,6 @@ namespace PMS.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ApplicationNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("AppliedDate")
                         .HasColumnType("datetime2");
@@ -73,9 +71,6 @@ namespace PMS.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationNumber")
-                        .IsUnique();
-
                     b.HasIndex("PlacementDriveId");
 
                     b.HasIndex("StudentId", "PlacementDriveId")
@@ -83,28 +78,6 @@ namespace PMS.Data.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Applications", (string)null);
-                });
-
-            modelBuilder.Entity("PMS.Data.Entities.ApplicationNumberCounter", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("LastSequence")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Year")
-                        .IsUnique();
-
-                    b.ToTable("ApplicationNumberCounters", (string)null);
                 });
 
             modelBuilder.Entity("PMS.Data.Entities.Company", b =>
