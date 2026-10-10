@@ -80,7 +80,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
-
+builder.Services.AddOutputCache();
+builder.Services.AddHealthChecks();
 
 // Add services to the container.
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -263,9 +264,14 @@ app.UseCors("AllowAll");
 app.UseRateLimiter();
 app.UseAuthentication();           // must come BEFORE Authorization
 app.UseAuthorization();
+app.UseOutputCache();
 
 app.MapControllers();
 
+app.MapGet("/health", () => Results.Ok("Healthy"))
+   .WithName("HealthCheck")
+   .WithTags("Health")
+   .WithSummary("Checks whether the API is responding");
 try
 {
     Log.Information("Starting EMS API...");
