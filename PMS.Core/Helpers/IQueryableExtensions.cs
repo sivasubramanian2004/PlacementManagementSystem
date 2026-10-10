@@ -15,7 +15,7 @@ namespace PMS.Core.Helpers
             var totalRecords = await query.CountAsync(cancellationToken);
 
             var items = await query
-                        .Skip(request.Skip)
+                        .Skip((request.PageNumber - 1) * request.PageSize)
                         .Take(request.PageSize)
                         .ToListAsync(cancellationToken);
 

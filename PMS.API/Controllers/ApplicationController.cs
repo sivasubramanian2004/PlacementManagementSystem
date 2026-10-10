@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using PMS.Core.DTOs.Applications;
 using PMS.Core.Helpers;
 using PMS.Service.Applicationss;
@@ -72,6 +73,7 @@ namespace PMS.API.Controllers
 
         [HttpGet("Get-MyApplication")]
         [Authorize]
+        [OutputCache(Duration = 300)]
         public async Task<IActionResult> GetMyApplication()
         {
 
@@ -103,6 +105,7 @@ namespace PMS.API.Controllers
 
         [HttpGet("GetAll-Applications")]
         [Authorize]
+        [OutputCache(Duration = 300)]
         public async Task<IActionResult> GetAllApplication([FromQuery]ApplicationQueryParameters request)
         {
 
@@ -165,9 +168,8 @@ namespace PMS.API.Controllers
             };
 
             return Ok(response);
-
-        
         }
+
 
         [HttpDelete("Delete-Application")]
         [Authorize]

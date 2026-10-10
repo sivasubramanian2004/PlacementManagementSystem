@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.OutputCaching;
 using PMS.Core.DTOs.Departments;
 using PMS.Core.Helpers;
 using PMS.Service.Departments;
@@ -73,10 +74,14 @@ namespace PMS.API.Controllers
         }
 
 
-        [Authorize]
+       
         [HttpGet("Get-Department")]
+        [Authorize]
+        [OutputCache(Duration = 300)]
         public async Task<IActionResult> Getdepartment([FromQuery]DepartmentQueryParameters request)
         {
+
+            Console.WriteLine("Controller executed!");
 
             var result = await _departmentService.GetDepartmentsAsync(request);
 
