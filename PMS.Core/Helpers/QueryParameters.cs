@@ -22,8 +22,8 @@ namespace PMS.Core.Helpers
                     : value;
         }
 
-        public int Skip => (PageNumber - 1) * PageSize;
-        /*
+       /* public int Skip => (PageNumber - 1) * PageSize;
+        
          For example:
 
               PageNumber = 3
