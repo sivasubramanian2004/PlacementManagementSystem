@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using PMS.Core.DTOs.Dashboard;
 using PMS.Core.Helpers;
 using PMS.Service.Dashboard;
@@ -18,6 +19,7 @@ namespace PMS.API.Controllers
 
         [HttpGet]
         [Authorize]
+        [OutputCache(Duration = 300)]
         public async Task<IActionResult> GetDashboard(
             [FromQuery] DashboardQueryParameters request)
         {

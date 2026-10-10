@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using PMS.Core.DTOs.Companies;
-using PMS.Service.Companies;
 using PMS.Core.Helpers;
+using PMS.Service.Companies;
 using PMS.Service.Departments;
 namespace PMS.API.Controllers
 {
@@ -32,6 +33,7 @@ namespace PMS.API.Controllers
         }
 
         [HttpGet("Get-Company")]
+        [OutputCache(Duration = 300)]
         public async Task<IActionResult> GetCompany([FromQuery] CompanyQueryParameters request) {
 
             var result = await _companyService.GetCompanyAsnyc(request);
