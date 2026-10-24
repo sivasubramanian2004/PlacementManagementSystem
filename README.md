@@ -1140,3 +1140,13 @@ This project is developed as an academic and portfolio project for learning and 
 - Caching
 - Git Workflow
 - Clean Architecture Practices
+
+## 👨‍💻 Author
+
+**Sivasubramanian S**
+
+- GitHub: https://github.com/sivasubramanian2004
+- LinkedIn: https://www.linkedin.com/in/sivasubramanian-s-988389325/
+- Email: shivasubramanian3332@gmail.com
+
+---
