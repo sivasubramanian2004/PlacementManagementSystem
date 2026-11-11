@@ -9,7 +9,10 @@
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
 		<PackageReference Include="ClosedXML" Version="0.105.1" />
-		<PackageReference Include="MailKit" Version="4.17.0" />
+		
+		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.14" />	
+		
+
 		<PackageReference Include="Supabase" Version="8.8.0" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
 	

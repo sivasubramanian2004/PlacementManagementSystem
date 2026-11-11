@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         // =====================================
         // 4. CONFIGURATION SETTINGS
         // =====================================
+        services.AddHttpClient();
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
         services.Configure<FileSettings>(configuration.GetSection("FileSettings"));
 
@@ -83,9 +84,6 @@ public static class ServiceCollectionExtensions
                 supabaseKey,
                 options);
         });
-
-
-
 
         // =====================================
         // 5. JWT AUTHENTICATION

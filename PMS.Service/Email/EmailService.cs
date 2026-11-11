@@ -1,41 +1,59 @@
-﻿using MailKit.Net.Smtp;
-using MailKit.Security;
-using Microsoft.Extensions.Options;
-using MimeKit;
+﻿
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using PMS.Core.Helpers;
+using Microsoft.Extensions.Options;
+
 namespace PMS.Service.Email
 {
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _settings;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public EmailService(IOptions<EmailSettings> settings)
+        public EmailService(
+            IOptions<EmailSettings> settings,
+            IHttpClientFactory httpClientFactory)
         {
             _settings = settings.Value;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public async Task SendEmailAsync(
+            string toEmail,
+            string subject,
+            string body)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            message.Subject = subject;
+            if (string.IsNullOrWhiteSpace(_settings.ApiKey))
+                throw new InvalidOperationException(
+                    "Sendliberty API Key is missing.");
 
-            message.Body = new TextPart("html") { Text = body };
+            var client = _httpClientFactory.CreateClient();
 
-            using var client = new SmtpClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue(
+                    "Bearer", _settings.ApiKey);
 
-            try
+            var request = new
             {
-                await client.ConnectAsync(_settings.Host, _settings.Port,
-                    _settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
+                from = $"{_settings.SenderName} <{_settings.SenderEmail}>",
+                to = toEmail,
+                subject = subject,
+                html = body
+            };
 
-                await client.AuthenticateAsync(_settings.Username, _settings.Password);
-                await client.SendAsync(message);
-            }
-            finally
+            var response = await client.PostAsJsonAsync(
+                "https://sendliberty.com/api/send",
+                request);
+
+            if (!response.IsSuccessStatusCode)
             {
-                await client.DisconnectAsync(true);
+                var error = await response.Content.ReadAsStringAsync();
+
+                throw new HttpRequestException(
+                    $"Sendliberty email failed. " +
+                    $"Status: {(int)response.StatusCode}. " +
+                    $"Details: {error}");
             }
         }
     }
