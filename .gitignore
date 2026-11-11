@@ -362,3 +362,14 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 Visual Studio 18/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.override.yml
+
+# Ignore Development settings
+**/appsettings.Development.json
