@@ -1,127 +1,140 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PMS.Core.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace PMS.Service.FileStorage
+namespace PMS.Service.FileStorage;
+
+public class FileStorageService : IFileStorageService
 {
-    public class FileStorageService : IFileStorageService
+    private readonly Supabase.Client _supabaseClient;
+    private readonly FileSettings _fileSettings;
+    private readonly ILogger<FileStorageService> _logger;
+    private readonly string _bucketName;
+
+    public FileStorageService(
+        Supabase.Client supabaseClient,
+        IOptions<FileSettings> fileSettings,
+        IConfiguration configuration,
+        ILogger<FileStorageService> logger)
     {
-        private readonly string _webRootPath;
-        private readonly FileSettings _fileSettings;
-        private readonly ILogger<FileStorageService> _logger;
+        _supabaseClient = supabaseClient;
+        _fileSettings = fileSettings.Value;
+        _logger = logger;
 
-            public FileStorageService(
-            IWebHostEnvironment env,
-            IOptions<FileSettings> fileSettings,
-            ILogger<FileStorageService> logger)
-            {
-            _webRootPath = env.WebRootPath
-                           ?? Path.Combine(env.ContentRootPath, "wwwroot");
+        _bucketName = configuration["Supabase:BucketName"]
+            ?? throw new InvalidOperationException(
+                "Supabase bucket name is missing.");
+    }
 
-            _fileSettings = fileSettings.Value;
-            _logger = logger;
-            }
+    public async Task<FileUploadResult> UploadAsync(
+        IFormFile file,
+        string folder)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("No file was uploaded.");
 
-        public async Task<FileUploadResult> UploadAsync(IFormFile file, string folder)
+        var maxBytes = _fileSettings.MaxFileSizeInMB * 1024L * 1024L;
+
+        if (file.Length > maxBytes)
         {
-            // ---------------- Validation ----------------
+            throw new ArgumentException(
+                $"File size exceeds {_fileSettings.MaxFileSizeInMB} MB.");
+        }
 
-            if (file == null || file.Length == 0)
-                throw new ArgumentException("No file was uploaded.");
+        var extension = Path.GetExtension(file.FileName)
+            .ToLowerInvariant();
 
-            var maxBytes = _fileSettings.MaxFileSizeInMB * 1024L * 1024L;
+        if (!_fileSettings.AllowedExtensions.Contains(
+                extension,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"File type '{extension}' is not allowed.");
+        }
 
-            if (file.Length > maxBytes)
+        // Generate a unique name; never trust the original filename for storage.
+        var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+
+        var safeFolder = folder
+            .Replace("\\", "/")
+            .Trim('/');
+
+        var storagePath = $"{safeFolder}/{uniqueFileName}";
+
+        var temporaryFile = Path.Combine(
+            Path.GetTempPath(),
+            $"{Guid.NewGuid():N}{extension}");
+
+        try
+        {
+            await using (var output = new FileStream(
+                temporaryFile,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None))
             {
-                throw new ArgumentException($"File size exceeds the maximum allowed limit of " +
-                     $"{_fileSettings.MaxFileSizeInMB} MB.");
-
-            }
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-            if (!_fileSettings.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-
-            {
-                throw new ArgumentException(
-                    $"File type '{extension}' is not allowed. " +
-                    $"Allowed types: " +
-                    $"{string.Join(", ", _fileSettings.AllowedExtensions)}");
+                await file.CopyToAsync(output);
             }
 
-            // ---------------- Folder ----------------
+            await _supabaseClient.Storage
+                .From(_bucketName)
+                .Upload(
+                    temporaryFile,
+                    storagePath,
+                    new Supabase.Storage.FileOptions
+                    {
+                        ContentType = file.ContentType,
+                        Upsert = false
+                    });
 
-            var uploadFolder = Path.Combine(_webRootPath, _fileSettings.BasePath, folder);
-
-            Directory.CreateDirectory(uploadFolder);
-
-            // ---------------- File Name ----------------
-
-            var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
-
-            //physical path on your server: C:\MyProject\wwwroot\UploadedDocuments\Careers\abc123.jpg --full path
-
-            var fullPath = Path.Combine(uploadFolder, uniqueFileName);
-            // ---------------- Save File ----------------
-
-            try
-            {
-                await using var stream = new FileStream(
-                                        fullPath,
-                                        FileMode.Create,
-                                        FileAccess.Write,
-                                        FileShare.None);
-
-
-                await file.CopyToAsync(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Failed to save uploaded file. FileName: {FileName}, Folder: {Folder}", file.FileName, folder);
-
-                throw new InvalidOperationException("Failed to save the uploaded file. Please try again.", ex);
-            }
-            // ---------------- Relative URL ----------------
-
-            // relative path for /UploadedDocuments / Careers / abc123.jpg
-            var relativePath = "/" + Path.Combine(_fileSettings.BasePath, folder, uniqueFileName).Replace("\\", "/");
+            _logger.LogInformation(
+                "File uploaded to Supabase. StoragePath: {StoragePath}",
+                storagePath);
 
             return new FileUploadResult
             {
                 FileName = uniqueFileName,
-                OriginalFileName = file.FileName,
-                RelativePath = relativePath,
-                FullPath = fullPath,
+                OriginalFileName = Path.GetFileName(file.FileName),
+                RelativePath = storagePath,
                 FileSize = file.Length
             };
         }
-        public Task DeleteAsync(string fullPath)
+        catch (Exception ex)
         {
-            if (File.Exists(fullPath))
-            {
-                File.Delete(fullPath);
-            }
-            return Task.CompletedTask;
+            _logger.LogError(
+                ex,
+                "Supabase upload failed for {FileName}",
+                file.FileName);
+
+            throw;
         }
-        public Task<string> GetFullPath(string relativePath)
+        finally
         {
-            if (string.IsNullOrWhiteSpace(relativePath))
-                return Task.FromResult(string.Empty);
-
-            var cleanPath = relativePath
-                .TrimStart('/')
-                .Replace(
-                    "/",
-                    Path.DirectorySeparatorChar.ToString());
-
-            var fullPath = Path.Combine(_webRootPath, cleanPath);
-
-            return Task.FromResult(fullPath);
+            if (File.Exists(temporaryFile))
+                File.Delete(temporaryFile);
         }
+    }
+
+    public async Task DeleteAsync(string storagePath)
+    {
+        if (string.IsNullOrWhiteSpace(storagePath))
+            throw new ArgumentException("Storage path is required.");
+
+        await _supabaseClient.Storage
+            .From(_bucketName)
+            .Remove(new List<string> { storagePath });
+    }
+
+    public async Task<string> GetSignedUrlAsync(string storagePath)
+    {
+        if (string.IsNullOrWhiteSpace(storagePath))
+            throw new ArgumentException("Storage path is required.");
+
+        // URL is valid for 60 seconds.
+        return await _supabaseClient.Storage
+            .From(_bucketName)
+            .CreateSignedUrl(storagePath, 1800);
     }
 }

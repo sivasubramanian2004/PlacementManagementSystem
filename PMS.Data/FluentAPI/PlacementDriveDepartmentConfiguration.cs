@@ -37,7 +37,7 @@ namespace PMS.Data.FluentAPI
                 x.DepartmentId
             })
             .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
+            .HasFilter("\"IsDeleted\" = false");
         }
     }
 }

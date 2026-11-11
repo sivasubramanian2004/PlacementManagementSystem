@@ -44,7 +44,7 @@ namespace PMS.API.Controllers
 
         }
 
-        [HttpGet("GetApplication{id:int}")]
+        [HttpGet("GetApplication/{id:int}")]
         [Authorize]
         public async Task<IActionResult> GetApplication(int id)
         {
@@ -139,7 +139,7 @@ namespace PMS.API.Controllers
             var file = await _applicationService.DownloadApplicationsAsync(request);
 
 
-            var fileName = $"Applications_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var fileName = $"Applications_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
 
 
             return File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
@@ -199,3 +199,7 @@ namespace PMS.API.Controllers
         }
     }
 }
+
+/*"ConnectionStrings": {
+    "DefaultConnection": "Server=SIVASUBRAMANIAN\\SQLEXPRESS;Database=PlacementManagementDb;Trusted_Connection=True;TrustServerCertificate=True;"
+  },*/

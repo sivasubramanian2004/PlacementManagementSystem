@@ -27,7 +27,8 @@ namespace PMS.API.Controllers
 
         public async Task<IActionResult> Register([FromBody] AuthRequestDto dto)
         {
-            var result = await _authService.RegisterAsync(dto);
+            var userId = GetCurrentUserId();
+            var result = await _authService.RegisterAsync(dto,userId);
 
             var response = new ApiResponse<AuthResponseDto>
             {
@@ -115,7 +116,7 @@ namespace PMS.API.Controllers
         }
        
         
-        [HttpGet]
+        [HttpGet("Get-User")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers([FromQuery] UserQueryParameters request)
         {
@@ -126,6 +127,23 @@ namespace PMS.API.Controllers
                 Success = true,
                 Message = "Profile retrieved successfully",
                 Data = user,
+                Errors = null,
+                StatusCode = 200
+            };
+            return Ok(response);
+        }
+
+        [HttpDelete("Delete-User")]
+        [Authorize]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var deletedBy = GetCurrentUserId();
+            await _authService.DeleteUserAsync(id, deletedBy);
+            var response = new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Profile deleted successfully",
+                Data = null,
                 Errors = null,
                 StatusCode = 200
             };

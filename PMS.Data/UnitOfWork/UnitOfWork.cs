@@ -1,56 +1,96 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace PMS.Data.UnitOfWork
+namespace PMS.Data.UnitOfWork;
+
+public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 {
-    public class UnitOfWork : IUnitOfWork
+    private readonly AppDbContext _context;
+    private IDbContextTransaction? _transaction;
+    private bool _disposed;
+
+    public UnitOfWork(AppDbContext context)
     {
-        private readonly AppDbContext _context;
-        private IDbContextTransaction? _transaction;
+        _context = context;
+    }
 
-        public UnitOfWork(AppDbContext context)
+    public async Task BeginTransactionAsync()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (_transaction is not null)
+            return;
+
+        _transaction = await _context.Database.BeginTransactionAsync();
+    }
+
+    public Task<int> SaveChangesAsync()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        return _context.SaveChangesAsync();
+    }
+
+    public async Task CommitTransactionAsync()
+    {
+        if (_transaction is null)
+            return;
+
+        var transaction = _transaction;
+
+        try
         {
-            _context = context;
+            await transaction.CommitAsync();
         }
-
-        public async Task BeginTransactionAsync()
+        finally
         {
-            if (_transaction != null)
-                return;
-
-            _transaction = await _context.Database.BeginTransactionAsync();
+            _transaction = null;
+            await transaction.DisposeAsync();
         }
+    }
 
-        public Task<int> SaveChangesAsync()
+    public async Task RollbackTransactionAsync()
+    {
+        if (_transaction is null)
+            return;
+
+        var transaction = _transaction;
+
+        try
         {
-            return _context.SaveChangesAsync();
+            await transaction.RollbackAsync();
         }
-
-        public async Task CommitTransactionAsync()
+        finally
         {
-            if (_transaction == null)
-                return;
+            _transaction = null;
+            await transaction.DisposeAsync();
+        }
+    }
 
-            await _transaction.CommitAsync();
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _transaction?.Dispose();
+        _transaction = null;
+        _disposed = true;
+
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        if (_transaction is not null)
+        {
             await _transaction.DisposeAsync();
             _transaction = null;
         }
 
-        public async Task RollbackTransactionAsync()
-        {
-            if (_transaction == null)
-                return;
+        _disposed = true;
 
-            await _transaction.RollbackAsync();
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
-
-        public void Dispose()
-        {
-            _transaction?.Dispose();
-        }
+        GC.SuppressFinalize(this);
     }
 }

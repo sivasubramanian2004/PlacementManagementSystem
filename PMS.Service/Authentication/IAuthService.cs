@@ -1,4 +1,6 @@
-﻿using PMS.Core.DTOs.Auth;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Wordprocessing;
+using PMS.Core.DTOs.Auth;
 using PMS.Core.Helpers;
 using System;
 using System.Collections.Generic;
@@ -9,7 +11,7 @@ namespace PMS.Service.Authentication
     public interface IAuthService
 
     {
-        Task<AuthResponseDto> RegisterAsync(AuthRequestDto dto);
+        Task<AuthResponseDto> RegisterAsync(AuthRequestDto dto, int userId);
         Task<LoginResponseDto> LoginAsync(LoginRequestDto  dto);
         Task UpdateAsync(int id, AuthUpdateDto dto);
 
@@ -17,5 +19,7 @@ namespace PMS.Service.Authentication
         Task ResetPasswordAsync(ResetPasswordDto dto);
 
         Task<PagedResult<UserBasicDto>> GetAllUsersAsync(UserQueryParameters request);
+
+        Task DeleteUserAsync(int id, int deletedBy);
     }
 }

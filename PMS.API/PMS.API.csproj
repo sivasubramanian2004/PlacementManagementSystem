@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>82f897c5-3695-4590-a376-7b09c96faac3</UserSecretsId>
   </PropertyGroup>
 
    <ItemGroup>
@@ -16,7 +17,9 @@
 	      </PackageReference>
 	      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
 	      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-	      <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3"></PackageReference>				
+	      <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3"></PackageReference>
+	      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+                 
 	              
     </ItemGroup>
 

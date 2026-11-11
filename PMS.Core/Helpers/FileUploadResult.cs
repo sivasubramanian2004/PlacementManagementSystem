@@ -11,11 +11,11 @@ namespace PMS.Core.Helpers
         //actual file name
         public string OriginalFileName { get; set; } = string.Empty;
 
-        //relative path for db table store
+        // Supabase bucket path; save this in PostgreSQL.
         public string RelativePath { get; set; } = string.Empty;
 
         //physical path on your server:
-        public string FullPath { get; set; } = string.Empty;
+       
         public long FileSize { get; set; }
     }
 }

@@ -52,7 +52,7 @@ namespace PMS.Data.FluentAPI
             builder.Property(e => e.CreatedDate)
                   .HasColumnName("CreatedDate")
                   .IsRequired()
-                  .HasDefaultValueSql("GETDATE()");
+                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.Property(e => e.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -72,8 +72,8 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(e => e.DeletedBy)
                    .HasColumnName("DeletedBy")
-                   .IsRequired(false)
-                   .HasColumnType("int");
+                   .IsRequired(false);
+                  
 
             builder.Property(e => e.IsActive)
                    .HasColumnName("IsActive")

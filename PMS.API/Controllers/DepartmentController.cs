@@ -15,8 +15,9 @@ namespace PMS.API.Controllers
         private readonly IDepartmentService _departmentService;
         public DepartmentController(IDepartmentService departmentService) => _departmentService = departmentService;
 
-        [Authorize]
+      
         [HttpPost("Add-Departments")]
+        [Authorize]
         public async Task<IActionResult> Insert([FromBody] CreateDepartmentRequestDto dto)
         {
             var CreatedBy = GetCurrentUserId();
@@ -34,8 +35,9 @@ namespace PMS.API.Controllers
         }
 
 
-        [Authorize]
+       
         [HttpDelete("Delete-Department/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
 
@@ -53,8 +55,9 @@ namespace PMS.API.Controllers
             return Ok(response);
         }
 
-        [Authorize]
+       
         [HttpPut("update-Department/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] CreateDepartmentRequestDto dto)
         {
 

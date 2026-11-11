@@ -40,7 +40,7 @@ namespace PMS.Data.FluentAPI
             builder.Property(d => d.CreatedDate)
                    .HasColumnName("CreatedDate")
                    .IsRequired()
-                   .HasDefaultValueSql("GETDATE()");
+                   .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.Property(d => d.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -76,11 +76,11 @@ namespace PMS.Data.FluentAPI
             //Index Configuration
             builder.HasIndex(d => d.Name)
                    .IsUnique()
-                   .HasFilter("[IsDeleted] = 0");
+                   .HasFilter("\"IsDeleted\" = false");
 
             builder.HasIndex(d=>d.Code)
                    .IsUnique()
-                   .HasFilter("[IsDeleted] = 0");
+                   .HasFilter("\"IsDeleted\" = false");
 
             //Query Filters
             builder.HasQueryFilter(d => !d.IsDeleted);

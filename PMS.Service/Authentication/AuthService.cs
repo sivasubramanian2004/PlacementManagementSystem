@@ -1,13 +1,17 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PMS.Core.DTOs.Auth;
 using PMS.Core.Helpers;
 using PMS.Data.Entities;
 using PMS.Data.Repositories;
+using PMS.Data.UnitOfWork;
 using PMS.Service.Email;
+using PMS.Service.Students;
 using PMS.Service.TokenGenerator;
 using System;
 using System.Collections.Generic;
@@ -23,17 +27,27 @@ namespace PMS.Service.Authentication
             private readonly IRepository<User> _userRepo;
             private readonly IJwtTokenGenerator _jwtGenerator;
             private readonly IEmailService _emailService;
+
+            private readonly IUnitOfWork _unitOfWork;
+
+            private readonly IStudentService _studentService;
+
+            private readonly IRepository<Student> _studentRepo;
             private readonly ILogger<AuthService> _logger;
 
-            public AuthService(IRepository<User> userRepo, IJwtTokenGenerator jwtGenerator, IEmailService emailService, ILogger<AuthService> logger)
+            public AuthService(IRepository<User> userRepo, IJwtTokenGenerator jwtGenerator, IEmailService emailService,
+                IStudentService studentService,IUnitOfWork unitOfWork, IRepository<Student> studentRepo,ILogger<AuthService> logger)
             {
                 _userRepo = userRepo;
                 _jwtGenerator = jwtGenerator;
                 _emailService = emailService;
+                _studentService = studentService;
+                _unitOfWork = unitOfWork;
+                _studentRepo = studentRepo;
                 _logger = logger;
             }
 
-            public async Task<AuthResponseDto> RegisterAsync(AuthRequestDto dto)
+            public async Task<AuthResponseDto> RegisterAsync(AuthRequestDto dto, int userId)
             {
                 // Check for existing email (excluding soft-deleted users)
                 var existingUser = await _userRepo.TableNoTracking
@@ -49,7 +63,8 @@ namespace PMS.Service.Authentication
                     Email = dto.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                     Role = UserRole.Student,             // ← always forced, never trust client input
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy=userId
                 };
 
                 var savedUser = await _userRepo.InsertAsync(user);
@@ -491,7 +506,56 @@ namespace PMS.Service.Authentication
             return await resultQuery.ToPagedResultAsync(request);
         }
 
-    }
+          public async Task DeleteUserAsync(int id, int deletedBy) { 
+        
+            var user = await _userRepo.Table
+                   .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+            try
+            {
+                await _unitOfWork.BeginTransactionAsync();
+
+
+                // Delete the related Student only when the user is a Student.
+                if (user.Role == UserRole.Student)
+                {
+                    var studentId = await _studentRepo.TableNoTracking
+                        .Where(s => s.UserId == user.Id && !s.IsDeleted)
+                        .Select(s => s.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (studentId > 0)
+                    {
+                        await _studentService.DeleteStudentAsync(
+                            studentId,
+                            deletedBy);
+                    }
+                }
+
+                user.IsDeleted = true;
+                user.IsActive = false;
+                user.DeletedDate = DateTime.UtcNow;
+                user.DeletedBy = deletedBy;
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+                _logger.LogInformation("User deleted: {Email}, UserId: {UserId} successfully", user.Email, user.Id);
+
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogError(ex, "Error occurred while deleting user: {Email}, UserId: {UserId}", user.Email, user.Id);
+
+                throw;
+
+            }
+            
+          }
+        }
+  
 }
+
 
 

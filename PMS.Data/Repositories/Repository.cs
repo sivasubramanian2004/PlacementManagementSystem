@@ -145,22 +145,48 @@ public class Repository<T>(AppDbContext context) : IRepository<T> where T : clas
     /// </summary>
     /// <param name="entity">The entity to update.</param>
     /// <returns>The updated entity.</returns>
+   
     public virtual async Task<T> UpdateAsync(T entity)
     {
-        if (entity == null)
-            throw new ArgumentNullException(nameof(entity));
+        ArgumentNullException.ThrowIfNull(entity);
 
-        var primaryKey = _context.Model.FindEntityType(typeof(T))
-            .FindPrimaryKey()
-            .Properties
-            .Select(x => x.Name)
-            .Single();
+        var entityType = _context.Model.FindEntityType(typeof(T));
 
-        var keyValue = typeof(T).GetProperty(primaryKey)?.GetValue(entity);
+        if (entityType is null)
+        {
+            throw new InvalidOperationException(
+                $"Entity type '{typeof(T).Name}' is not registered in the DbContext model.");
+        }
+
+        var primaryKey = entityType.FindPrimaryKey();
+
+        if (primaryKey is null)
+        {
+            throw new InvalidOperationException(
+                $"Entity type '{typeof(T).Name}' does not have a primary key.");
+        }
+
+        var keyProperties = primaryKey.Properties;
+
+        if (keyProperties.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Entity type '{typeof(T).Name}' must have exactly one primary key.");
+        }
+
+        var keyValue = typeof(T)
+            .GetProperty(keyProperties[0].Name)?
+            .GetValue(entity);
+
+        if (keyValue is null)
+        {
+            throw new InvalidOperationException(
+                $"Primary key '{keyProperties[0].Name}' cannot be null.");
+        }
 
         var existingEntity = await Entities.FindAsync(keyValue);
 
-        if (existingEntity != null)
+        if (existingEntity is not null)
         {
             _context.Entry(existingEntity).CurrentValues.SetValues(entity);
         }
@@ -171,6 +197,7 @@ public class Repository<T>(AppDbContext context) : IRepository<T> where T : clas
         }
 
         await _context.SaveChangesAsync();
+
         return entity;
     }
 

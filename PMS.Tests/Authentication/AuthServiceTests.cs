@@ -7,8 +7,10 @@
 using PMS.Core.Helpers;
 using PMS.Data.Entities;
     using PMS.Data.Repositories;
+using PMS.Data.UnitOfWork;
     using PMS.Service.Authentication;
     using PMS.Service.Email;
+using PMS.Service.Students;
     using PMS.Service.TokenGenerator;
     using Xunit;
 
@@ -23,17 +25,28 @@ using PMS.Data.Entities;
 
         private readonly AuthService _authService;
 
+    private readonly Mock<IStudentService> _studentServiceMock;
+    private readonly Mock<IRepository<Student>> _studentRepoMock;
+
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+
         public AuthServiceTests()
         {
             _userRepoMock = new Mock<IRepository<User>>();
             _jwtGeneratorMock = new Mock<IJwtTokenGenerator>();
             _emailServiceMock = new Mock<IEmailService>();
             _loggerMock = new Mock<ILogger<AuthService>>();
+            _unitOfWorkMock = new Mock<IUnitOfWork>();
+           _studentServiceMock = new Mock<IStudentService>();
+           _studentRepoMock = new Mock<IRepository<Student>>();
 
-            _authService = new AuthService(
+        _authService = new AuthService(
                 _userRepoMock.Object,
                 _jwtGeneratorMock.Object,
                 _emailServiceMock.Object,
+                 _studentServiceMock.Object,
+                  _unitOfWorkMock.Object,
+                _studentRepoMock.Object,
                 _loggerMock.Object);
         }
 
@@ -227,8 +240,9 @@ using PMS.Data.Entities;
                 It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
+        int CreatedBy = 1;
         // Act
-        var result = await _authService.RegisterAsync(dto);
+        var result = await _authService.RegisterAsync(dto, CreatedBy);
 
         // Assert
         Assert.NotNull(result);
@@ -283,10 +297,10 @@ using PMS.Data.Entities;
             Email = "siva@gmail.com",
             Password = "Password@123"
         };
-
+        int CreatedBy = 1;
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _authService.RegisterAsync(dto));
+            () => _authService.RegisterAsync(dto,CreatedBy));
 
         Assert.Equal("Email is already registered.", exception.Message);
 

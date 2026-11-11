@@ -33,7 +33,7 @@ builder.Host.UseSerilog();
 // ============================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 // ============================
 // 3. Custom Services and Dependency Injection

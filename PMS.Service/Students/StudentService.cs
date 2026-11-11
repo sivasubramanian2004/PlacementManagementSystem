@@ -46,12 +46,17 @@ namespace PMS.Service.Students
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<StudentResponseDto> CreateStudentAsync(CreateStudentRequestDto dto, int createdBy)
-        {
+   
+    public async Task<StudentResponseDto> CreateStudentAsync(
+    CreateStudentRequestDto dto,
+    int createdBy)
+    {
             // 1. Normalize input
             var email = dto.Email.Trim();
-            var registerNumber =
-                dto.RegisterNumber.Trim().ToUpperInvariant();
+
+            var registerNumber = dto.RegisterNumber
+                .Trim()
+                .ToUpperInvariant();
 
             // 2. Find ACTIVE User
             var user = await _userRepo.TableNoTracking
@@ -81,122 +86,171 @@ namespace PMS.Service.Students
                     "or register number.");
             }
 
-            // 4. Check Department exists and is active
-            var departmentExists = await _departmentRepo.TableNoTracking
-                .AnyAsync(d =>
+            // 4. Get ACTIVE Department
+            var department = await _departmentRepo.TableNoTracking
+                .FirstOrDefaultAsync(d =>
                     d.Id == dto.DepartmentId &&
                     !d.IsDeleted &&
                     d.IsActive);
 
-            if (!departmentExists)
+            if (department == null)
             {
                 throw new KeyNotFoundException(
                     $"Active Department with Id {dto.DepartmentId} not found.");
             }
-            // 5. Upload files
+
+            // 5. Validate required inputs
+            if (dto.Resume == null || dto.Resume.Length == 0)
+            {
+                throw new ArgumentException("Resume is required.");
+            }
+
+            if (dto.Educations == null)
+            {
+                throw new ArgumentException("Education details are required.");
+            }
+
+            // 6. Upload files to Supabase Storage
             FileUploadResult? resumePath = null;
             FileUploadResult? photoPath = null;
 
-            var photoFolder = Path.Combine("StudentDocuments", "StudentPhotos");
-            var resumeFolder = Path.Combine("StudentDocuments", "StudentResumes");
+            var photoFolder = "Students/StudentPhotos";
+            var resumeFolder = "Students/StudentResumes";
+
             try
             {
                 // Profile photo is optional
-                if (dto.ProfilePhoto != null)
+                if (dto.ProfilePhoto != null &&
+                    dto.ProfilePhoto.Length > 0)
                 {
-                    photoPath = await _fileStorageService.UploadAsync(dto.ProfilePhoto, photoFolder);
-
+                    photoPath = await _fileStorageService.UploadAsync(
+                        dto.ProfilePhoto,
+                        photoFolder);
                 }
-                // Resume is required
-                resumePath = await _fileStorageService.UploadAsync(dto.Resume, resumeFolder);
 
-                // 6. Create Student
+                // Resume is required
+                resumePath = await _fileStorageService.UploadAsync(
+                    dto.Resume,
+                    resumeFolder);
+
+                if (resumePath == null ||
+                    string.IsNullOrWhiteSpace(resumePath.RelativePath))
+                {
+                    throw new InvalidOperationException(
+                        "Resume upload did not return a valid storage path.");
+                }
+
+                // 7. Create Student
                 var student = new Student
                 {
                     UserId = user.Id,
-
                     RegisterNumber = registerNumber,
-
                     DepartmentId = dto.DepartmentId,
-
                     Gender = dto.Gender,
-
                     Phone = dto.Phone?.Trim(),
-
                     Skills = dto.Skills.Trim(),
-
                     PlacementStatus = dto.PlacementStatus,
 
+                    // Store Supabase object keys, not signed URLs
                     ResumeUrl = resumePath.RelativePath,
-
                     ProfilePictureUrl = photoPath?.RelativePath,
 
                     CreatedBy = createdBy
-
                 };
-                // 7. Add Student
+
+                // 8. Add Student
                 await _studentRepo.AddAsync(student);
-                // 8. Add Education Details
+
+                // 9. Add Education Details
                 foreach (var educationDto in dto.Educations)
                 {
                     student.Educations.Add(new EducationDetails
                     {
                         EducationType = educationDto.EducationType,
-
                         Institution = educationDto.Institution.Trim(),
-
                         PercentageOrCgpa = educationDto.PercentageOrCgpa,
-
                         Backlogs = educationDto.Backlogs,
-
                         YearOfPassing = educationDto.YearOfPassing,
-
                         Location = educationDto.Location?.Trim(),
-
                         CreatedBy = createdBy
                     });
                 }
-                // 9. Save Student + Education
-                await _unitOfWork.SaveChangesAsync();
-                // 10. Logging
-                _logger.LogInformation("Student created successfully for email {Email}", email);
 
-                // 11. Return Response
+                // 10. Save Student + Education
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Student created successfully. StudentId: {StudentId}, Email: {Email}",
+                    student.Id,
+                    email);
+
+                // 11. Generate temporary signed URL for the resume
+                var signedResumeUrl =
+                    await _fileStorageService.GetSignedUrlAsync(
+                        student.ResumeUrl);
+
+                // 12. Return Response
                 return new StudentResponseDto
                 {
                     StudentId = student.Id,
-
                     Email = user.Email,
-
                     RegisterNumber = student.RegisterNumber,
 
-                    Gender = student.Gender,
+                    // Use already-loaded objects instead of navigation properties
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    DepartmentName = department.Name,
+                    Role = user.Role,
 
+                    Gender = student.Gender,
                     PlacementStatus = student.PlacementStatus,
 
-                    ResumeUrl = _urlHelper.BuildFullUrl(
-               student.ResumeUrl) ?? string.Empty
+                    ResumeUrl = signedResumeUrl ?? string.Empty
                 };
             }
             catch
-            { // 12. Cleanup uploaded files if DB operation fails
-              // --------------------------------------------------
+            {
+                // 13. Cleanup uploaded files if creation fails
+                // Do not allow cleanup errors to hide the original exception.
 
-                if (resumePath != null)
+                if (resumePath != null &&
+                    !string.IsNullOrWhiteSpace(resumePath.RelativePath))
                 {
-                    await _fileStorageService.DeleteAsync(
-                        resumePath.FullPath);
+                    try
+                    {
+                        await _fileStorageService.DeleteAsync(
+                            resumePath.RelativePath);
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger.LogError(
+                            cleanupEx,
+                            "Failed to clean up uploaded resume. StoragePath: {StoragePath}",
+                            resumePath.RelativePath);
+                    }
                 }
 
-                if (photoPath != null)
+                if (photoPath != null &&
+                    !string.IsNullOrWhiteSpace(photoPath.RelativePath))
                 {
-                    await _fileStorageService.DeleteAsync(
-                        photoPath.FullPath);
+                    try
+                    {
+                        await _fileStorageService.DeleteAsync(
+                            photoPath.RelativePath);
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger.LogError(
+                            cleanupEx,
+                            "Failed to clean up uploaded profile photo. StoragePath: {StoragePath}",
+                            photoPath.RelativePath);
+                    }
                 }
 
                 throw;
             }
-        }
+    }
+
 
         public async Task DeleteStudentAsync(int id, int deletedBy)
         {
@@ -252,18 +306,18 @@ namespace PMS.Service.Students
                 // Delete Resume
                 if (!string.IsNullOrWhiteSpace(oldResumeUrl))
                 {
-                    var resumeFullPath = await _fileStorageService.GetFullPath(oldResumeUrl);
+                   
 
-                    await _fileStorageService.DeleteAsync(resumeFullPath);
+                    await _fileStorageService.DeleteAsync(oldResumeUrl);
 
                 }
 
                 // Delete Profile Photo
                 if (!string.IsNullOrWhiteSpace(oldProfilePictureUrl))
                 {
-                    var photoFullPath = await _fileStorageService.GetFullPath(oldProfilePictureUrl);
+                   
 
-                    await _fileStorageService.DeleteAsync(photoFullPath);
+                    await _fileStorageService.DeleteAsync(oldProfilePictureUrl);
                 }
             }
             catch (Exception ex)
@@ -293,11 +347,6 @@ namespace PMS.Service.Students
 
             var student = _studentRepo.TableNoTracking
                           .Where(s => s.IsDeleted != true);
-
-            if (student == null)
-            {
-                throw new KeyNotFoundException("Profile not found");
-            }
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
@@ -368,9 +417,28 @@ namespace PMS.Service.Students
                 Role = s.User.Role,
                 PlacementStatus = s.PlacementStatus,
                 Gender = s.Gender,
-                ResumeUrl = _urlHelper.BuildFullUrl(s.ResumeUrl) ?? string.Empty,
+                ResumeUrl = s.ResumeUrl
             });
-            return await resultquery.ToPagedResultAsync(request);
+            // 12. Apply pagination first
+            var pagedResult = await resultquery.ToPagedResultAsync(request);
+
+            // 13. Generate signed URLs for this page only
+            // Generate signed URLs for this page only
+            foreach (var studentDto in pagedResult.Items)
+            {
+                if (!string.IsNullOrWhiteSpace(studentDto.ResumeUrl))
+                {
+                    studentDto.ResumeUrl =
+                        await _fileStorageService.GetSignedUrlAsync(
+                            studentDto.ResumeUrl);
+                }
+                else
+                {
+                    studentDto.ResumeUrl = string.Empty;
+                }
+            }
+
+            return pagedResult;
         }
 
         public async Task<StudentBasicDto> GetStudentByIdAsync(int id)
@@ -428,9 +496,30 @@ namespace PMS.Service.Students
                 throw new KeyNotFoundException($"Student with Id {id} not found.");
             }
 
-            result.ProfilePictureUrl = _urlHelper.BuildFullUrl(result.ProfilePictureUrl) ?? string.Empty;
+            // Generate temporary URLs from Supabase Storage
+            if (!string.IsNullOrWhiteSpace(result.ProfilePictureUrl))
+            {
+                result.ProfilePictureUrl =
+                    await _fileStorageService.GetSignedUrlAsync(result.ProfilePictureUrl);
 
-            result.ResumeUrl = _urlHelper.BuildFullUrl(result.ResumeUrl) ?? string.Empty;
+            }
+            else
+            {
+                result.ProfilePictureUrl = string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ResumeUrl))
+            {
+                result.ResumeUrl =
+                    await _fileStorageService.GetSignedUrlAsync(result.ResumeUrl);
+
+            }
+            else
+            {
+
+                result.ResumeUrl = string.Empty;
+            }
+
 
             return result;
         }
@@ -447,10 +536,12 @@ namespace PMS.Service.Students
 
             return studentId.Value;
         }
-        public async Task<StudentBasicDto> GetMyProfileAsync(int StudentId)
+        public async Task<StudentBasicDto> GetMyProfileAsync(int userId)
         {
+            var studentId = await GetStudentId(userId);
+
             var result = await _studentRepo.TableNoTracking
-                .Where(s => s.Id == StudentId && !s.IsDeleted)
+                .Where(s => s.Id == studentId && !s.IsDeleted)
                 .Select(s => new StudentBasicDto
                 {
                     StudentId = s.Id,
@@ -465,8 +556,8 @@ namespace PMS.Service.Students
                     Gender = s.Gender,
                     Phone = s.Phone,
                     Status = s.IsActive ? "Active" : "Inactive",
-                    ProfilePictureUrl = _urlHelper.BuildFullUrl(s.ProfilePictureUrl) ?? string.Empty,
-                    ResumeUrl = _urlHelper.BuildFullUrl(s.ResumeUrl) ?? string.Empty,
+                    ProfilePictureUrl = s.ProfilePictureUrl,
+                    ResumeUrl = s.ResumeUrl,
                     Educations = s.Educations
                                 .Where(e => !e.IsDeleted)
                                 .Select(e => new EducationDto
@@ -485,7 +576,30 @@ namespace PMS.Service.Students
 
             if (result == null)
             {
-                throw new KeyNotFoundException($"Student with Id {StudentId} not found.");
+                throw new KeyNotFoundException($"Student with Id {studentId} not found.");
+            }
+            // Generate temporary URLs from Supabase Storage
+            if (!string.IsNullOrWhiteSpace(result.ProfilePictureUrl))
+            {
+                result.ProfilePictureUrl =
+                    await _fileStorageService.GetSignedUrlAsync(result.ProfilePictureUrl);
+
+            }
+            else
+            {
+                result.ProfilePictureUrl = string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ResumeUrl))
+            {
+                result.ResumeUrl =
+                    await _fileStorageService.GetSignedUrlAsync(result.ResumeUrl);
+
+            }
+            else
+            {
+
+                result.ResumeUrl = string.Empty;
             }
 
             return result;
@@ -519,8 +633,8 @@ namespace PMS.Service.Students
             FileUploadResult? newResume = null;
             FileUploadResult? newPhoto = null;
 
-            var resumeFolder = Path.Combine("StudentDocuments", "StudentResumes");
-            var photoFolder = Path.Combine("StudentDocuments", "StudentPhotos");
+            var resumeFolder = Path.Combine("Students", "StudentResumes");
+            var photoFolder = Path.Combine("Students", "StudentPhotos");
 
             try
             {
@@ -734,9 +848,9 @@ namespace PMS.Service.Students
                 if (newResume != null && !string.IsNullOrWhiteSpace(oldResumeUrl))
 
                 {
-                    var oldResumeFullPath = await _fileStorageService.GetFullPath(oldResumeUrl);
+                   
 
-                    await _fileStorageService.DeleteAsync(oldResumeFullPath);
+                    await _fileStorageService.DeleteAsync(oldResumeUrl);
 
                 }
                 // =====================================================
@@ -747,9 +861,9 @@ namespace PMS.Service.Students
                 if (newPhoto != null && !string.IsNullOrWhiteSpace(oldProfilePictureUrl))
                 {
 
-                    var oldPhotoFullPath = await _fileStorageService.GetFullPath(oldProfilePictureUrl);
+                   
 
-                    await _fileStorageService.DeleteAsync( oldPhotoFullPath);
+                    await _fileStorageService.DeleteAsync( oldProfilePictureUrl);
                        
                 }
 
@@ -769,12 +883,12 @@ namespace PMS.Service.Students
 
                 if (newResume != null)
                 {
-                    await _fileStorageService.DeleteAsync(newResume.FullPath);
+                    await _fileStorageService.DeleteAsync(newResume.RelativePath);
                 }
 
                 if (newPhoto != null)
                 {
-                    await _fileStorageService.DeleteAsync(newPhoto.FullPath);
+                    await _fileStorageService.DeleteAsync(newPhoto.RelativePath);
                 }
                 throw;
             }

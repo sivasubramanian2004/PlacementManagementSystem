@@ -6,6 +6,9 @@ namespace PMS.Core.DTOs.Dashboard
 {
     public class DashboardResponseDto
     {
+        //Users
+        public int TotalActiveUsers { get; set; }
+
         // Students
         public int TotalStudents { get; set; }
         public int PlacedStudents { get; set; }

@@ -41,8 +41,8 @@ namespace PMS.Data.FluentAPI
                     .IsRequired();
 
                 builder.Property(p => p.MinimumCgpa)
-                    .HasPrecision(4, 2)
-                    .IsRequired();
+                       .HasPrecision(4, 2)
+                       .IsRequired();
 
                 builder.Property(p => p.MaximumBacklogs)
                     .IsRequired();
@@ -51,8 +51,8 @@ namespace PMS.Data.FluentAPI
                     .IsRequired();
 
                 builder.Property(p => p.Salary)
-                    .HasPrecision(18, 2)
-                    .IsRequired(false);
+                       .HasPrecision(18, 2)
+                       .IsRequired(false);
 
                 builder.Property(p => p.RequiredSkills)
                     .HasMaxLength(1000)

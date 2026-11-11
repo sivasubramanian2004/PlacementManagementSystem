@@ -17,7 +17,7 @@ namespace PMS.API.Controllers
             _dashboardService = dashboardService;
         }
 
-        [HttpGet]
+        [HttpGet("Get-Dashboard")]
         [Authorize]
         [OutputCache(Duration = 300)]
         public async Task<IActionResult> GetDashboard(

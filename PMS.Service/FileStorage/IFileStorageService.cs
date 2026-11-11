@@ -6,12 +6,18 @@ using System.Text;
 
 namespace PMS.Service.FileStorage
 {
+
+   
     public interface IFileStorageService
     {
-        Task<FileUploadResult> UploadAsync(IFormFile file, string folder);
+        Task<FileUploadResult> UploadAsync(
+            IFormFile file,
+            string folder);
 
-        Task DeleteAsync(string fullPath);
+        Task DeleteAsync(string storagePath);
 
-        Task<string> GetFullPath(string relativePath);
+        Task<string> GetSignedUrlAsync(
+            string storagePath);
     }
+
 }

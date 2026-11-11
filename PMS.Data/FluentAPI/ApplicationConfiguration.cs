@@ -53,7 +53,7 @@ namespace PMS.Core.Validators.Applications
                 a.PlacementDriveId
             })
             .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
+            .HasFilter("\"IsDeleted\" = false");
         }
     }
 }

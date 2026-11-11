@@ -21,7 +21,7 @@ namespace PMS.Service.Students
 
         Task<int> GetStudentId(int UserId);
 
-        Task<StudentBasicDto> GetMyProfileAsync(int StudentId);
+        Task<StudentBasicDto> GetMyProfileAsync(int userId);
 
         Task UpdateStudentAsync(int id, UpdateStudentRequestDto dto, int updatedBy);
     }

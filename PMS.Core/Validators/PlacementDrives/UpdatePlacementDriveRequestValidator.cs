@@ -66,10 +66,11 @@ namespace PMS.Core.Validators.PlacementDrives
                 .When(x => x.DepartmentIds != null)
                 .WithMessage("At least one department must be selected.");
 
-            RuleFor(x => x.DepartmentIds)
-                .Must(ids => ids!.Distinct().Count() == ids.Count)
-                .When(x => x.DepartmentIds != null)
+          
+           RuleFor(x => x.DepartmentIds)
+                .Must(ids => ids == null || ids.Distinct().Count() == ids.Count)
                 .WithMessage("DepartmentIds must not contain duplicates.");
+
 
             RuleForEach(x => x.DepartmentIds)
                 .GreaterThan(0)

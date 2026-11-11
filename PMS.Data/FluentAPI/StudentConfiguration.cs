@@ -42,7 +42,7 @@ namespace PMS.Data.FluentAPI
                    .HasMaxLength(500);
 
             builder.Property(s => s.PlacementStatus)
-                   .HasColumnName(" PlacementStatus")
+                   .HasColumnName("PlacementStatus")
                    .IsRequired();
                   
 
@@ -53,13 +53,13 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(s => s.ProfilePictureUrl)
                    .HasColumnName("ProfilePictureUrl")
-                   .IsRequired()
+                   .IsRequired(false)
                    .HasMaxLength(500);
 
             builder.Property(d => d.CreatedDate)
                    .HasColumnName("CreatedDate")
                    .IsRequired()
-                   .HasDefaultValueSql("GETDATE()");
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.Property(d => d.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -79,8 +79,8 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(d => d.DeletedBy)
                    .HasColumnName("DeletedBy")
-                   .IsRequired(false)
-                   .HasColumnType("int");
+                   .IsRequired(false);
+                 
 
             builder.Property(d => d.IsActive)
                    .HasColumnName("IsActive")
@@ -95,12 +95,13 @@ namespace PMS.Data.FluentAPI
             //Index Configuration  Only active/non-deleted records participate
             builder.HasIndex(u => u.RegisterNumber)
                    .IsUnique()
-                   .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+					.HasFilter("\"IsDeleted\" = false");
 
-            // UserId unique only for active/non-deleted students
-            builder.HasIndex(s => s.UserId)
+			// UserId unique only for active/non-deleted students
+			builder.HasIndex(s => s.UserId)
                    .IsUnique()
-                   .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+                   .HasFilter("\"IsDeleted\" = false");
+
 
             //Query Filters
             builder.HasQueryFilter(d => !d.IsDeleted);

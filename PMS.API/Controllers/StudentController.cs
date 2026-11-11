@@ -39,7 +39,7 @@ namespace PMS.API.Controllers
 
         }
 
-        [HttpDelete]
+        [HttpDelete("Delete Student/{id:int}")]
         [Authorize]
         public async Task<IActionResult> DeleteStudent(int id)
         {
@@ -56,6 +56,7 @@ namespace PMS.API.Controllers
             return Ok(response);
         }
         [HttpGet("GetAll-Student")]
+        [Authorize]
         public async Task<IActionResult> GetAllStudents([FromQuery] StudentQueryParameters request)
         {
             var result = await _studentService.GetAllStudentAsync(request);
@@ -71,6 +72,7 @@ namespace PMS.API.Controllers
         }
 
         [HttpGet("Get-Student/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> GetStudent(int id)
         {
             var result = await _studentService.GetStudentByIdAsync(id);
@@ -90,8 +92,8 @@ namespace PMS.API.Controllers
         public async Task<IActionResult> GetMyProfile()
         {
             var userId = GetCurrentUserId();
-            var StudentId = await _studentService.GetStudentId(userId);
-            var result = await _studentService.GetMyProfileAsync(StudentId);
+           
+            var result = await _studentService.GetMyProfileAsync(userId);
             var response = new ApiResponse<StudentBasicDto>
             {
                 Success = true,

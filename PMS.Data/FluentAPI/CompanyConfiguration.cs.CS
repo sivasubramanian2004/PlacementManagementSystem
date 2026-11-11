@@ -28,7 +28,7 @@ namespace PMS.Data.FluentAPI
             
             builder.HasIndex(c => c.Name)
                    .IsUnique()
-                   .HasFilter("[IsDeleted] = 0");
+                   .HasFilter("\"IsDeleted\" = false");
             // Industry
             builder.Property(c => c.IndustryType)
                    .HasColumnName("IndustryType")
@@ -73,7 +73,7 @@ namespace PMS.Data.FluentAPI
             builder.Property(d => d.CreatedDate)
                   .HasColumnName("CreatedDate")
                   .IsRequired()
-                  .HasDefaultValueSql("GETDATE()");
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.Property(d => d.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -93,8 +93,8 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(d => d.DeletedBy)
                    .HasColumnName("DeletedBy")
-                   .IsRequired(false)
-                   .HasColumnType("int");
+                   .IsRequired(false);
+                  
 
             builder.Property(d => d.IsActive)
                    .HasColumnName("IsActive")

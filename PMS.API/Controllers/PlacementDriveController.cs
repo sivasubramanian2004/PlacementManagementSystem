@@ -17,7 +17,7 @@ namespace PMS.API.Controllers
             _placementDriveService = placementDriveService;
         }
 
-        [HttpPost]
+        [HttpPost("Create-PlacementDrive")]
         [Authorize]
         public async Task<IActionResult> CreatePlacementDrive([FromBody] CreatePlacementDriveRequestDto dto) {
 

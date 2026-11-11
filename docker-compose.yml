@@ -1,0 +1,26 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: pms-api-container
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+  
+      #JWT Setttings
+      JwtSettings__SecretKey: "${JWT_SECRET_KEY}"
+
+      # Supabase Database
+      ConnectionStrings__DefaultConnection: "${SUPABASE_DB_CONNECTION_STRING}"
+
+      # Supabase Storage
+      Supabase__Url: "${SUPABASE_URL}"
+      Supabase__Key: "${SUPABASE_SECRET_KEY}"
+      Supabase__BucketName: "pms-documents"

@@ -41,7 +41,7 @@ namespace PMS.Data.FluentAPI
             builder.Property(u => u.PasswordHash)
                    .HasColumnName("PasswordHash")
                    .IsRequired()
-                   .HasMaxLength(100);
+                   .HasMaxLength(255);
 
             builder.Property(u => u.Role)
                    .HasColumnName("Role")
@@ -59,7 +59,7 @@ namespace PMS.Data.FluentAPI
                    .IsRequired(false);
 
             builder.Property(u => u.OtpIsUsed)
-                   .HasColumnName(" OtpIsUsed")
+                   .HasColumnName("OtpIsUsed")
                    .HasDefaultValue(false)
                    .IsRequired();
 
@@ -67,7 +67,7 @@ namespace PMS.Data.FluentAPI
             builder.Property(u => u.CreatedDate)
                    .HasColumnName("CreatedDate")
                    .IsRequired()
-                   .HasDefaultValueSql("GETDATE()");
+                   .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.Property(u => u.CreatedBy)
                    .HasColumnName("CreatedBy")
@@ -87,8 +87,8 @@ namespace PMS.Data.FluentAPI
 
             builder.Property(u => u.DeletedBy)
                    .HasColumnName("DeletedBy")
-                   .IsRequired(false)
-                   .HasColumnType("int");
+                   .IsRequired(false);
+                   
 
             builder.Property(u => u.IsActive)
                    .HasColumnName("IsActive")
@@ -102,10 +102,11 @@ namespace PMS.Data.FluentAPI
 
             //Index Configuration
             builder.HasIndex(u => u.Email)
-                   .IsUnique(true);
+                   .IsUnique(true)
+				   .HasFilter("\"IsDeleted\" = false");
 
-            //Query Filters
-            builder.HasQueryFilter(u => !u.IsDeleted);
+			//Query Filters
+			builder.HasQueryFilter(u => !u.IsDeleted);
         }
     }
 }

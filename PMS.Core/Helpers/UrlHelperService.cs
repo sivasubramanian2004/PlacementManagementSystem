@@ -8,7 +8,7 @@ namespace PMS.Core.Helpers
     public interface IUrlHelperService
     {
         string GetBaseUrl();
-        string BuildFullUrl(string? relativePath);
+        string? BuildFullUrl(string? relativePath);
     }
 
     public class UrlHelperService : IUrlHelperService

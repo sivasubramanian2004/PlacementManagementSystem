@@ -47,6 +47,11 @@ namespace PMS.Service.PlacementDrives
                                .FirstOrDefaultAsync(c => c.Id == dto.CompanyId &
                                !c.IsDeleted && c.IsActive);
 
+            var drive= await _placementDriveRepo.TableNoTracking.AnyAsync(p=>p.CompanyId==dto.CompanyId && p.JobTitle==dto.JobTitle &&
+                       p.DriveDate==dto.DriveDate && !p.IsDeleted);
+            if(drive)
+                throw new InvalidOperationException("A placement drive with the same company, job title, and drive date already exists.");
+
             if (company==null)
                 throw new KeyNotFoundException($"Company with id {dto.CompanyId} not found or inactive.");
 

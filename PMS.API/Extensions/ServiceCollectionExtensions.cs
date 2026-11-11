@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using PMS.Core.Helpers;
+using PMS.Core.Mappings;
 using PMS.Data.Repositories;
 using PMS.Data.UnitOfWork;
 using PMS.Service.Applicationss;
@@ -52,11 +53,38 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpContextAccessor();
 
+        MapsterConfig.RegisterMappings();
+
         // =====================================
         // 4. CONFIGURATION SETTINGS
         // =====================================
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
         services.Configure<FileSettings>(configuration.GetSection("FileSettings"));
+
+
+        // Supabase Storage Configuration
+        var supabaseUrl = configuration["Supabase:Url"]
+            ?? throw new InvalidOperationException(
+                "Supabase URL is missing from configuration.");
+
+        var supabaseKey = configuration["Supabase:Key"]
+            ?? throw new InvalidOperationException(
+                "Supabase API key is missing from configuration.");
+
+        services.AddSingleton<Supabase.Client>(_ =>
+        {
+            var options = new Supabase.SupabaseOptions
+            {
+                AutoConnectRealtime = false
+            };
+
+            return new Supabase.Client(
+                supabaseUrl,
+                supabaseKey,
+                options);
+        });
+
+
 
 
         // =====================================

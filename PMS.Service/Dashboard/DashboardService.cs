@@ -16,19 +16,22 @@ namespace PMS.Service.Dashboard
         private readonly IRepository<Department> _departmentRepo;
         private readonly IRepository<Company> _companyRepo;
         private readonly IRepository<PlacementDrive> _placementDriveRepo;
+        private readonly IRepository<User> _userRepo;
 
         public DashboardService(
             IRepository<Student> studentRepo,
             IRepository<Application> applicationRepo,
             IRepository<Department> departmentRepo,
             IRepository<Company> companyRepo,
-            IRepository<PlacementDrive> placementDriveRepo)
+            IRepository<PlacementDrive> placementDriveRepo,
+            IRepository<User> userRepo)
         {
             _studentRepo = studentRepo;
             _applicationRepo = applicationRepo;
             _departmentRepo = departmentRepo;
             _companyRepo = companyRepo;
             _placementDriveRepo = placementDriveRepo;
+            _userRepo = userRepo;
         }
 
         public async Task<DashboardResponseDto> GetDashboardAsync(
@@ -125,12 +128,17 @@ namespace PMS.Service.Dashboard
                 await _placementDriveRepo.TableNoTracking
                     .CountAsync(p => !p.IsDeleted);
 
+            var totalactiveusers = await _userRepo.TableNoTracking
+                                 .Where(u=>!u.IsDeleted)
+                                 .CountAsync();
+
             // =========================================================
             // 4. Response
             // =========================================================
 
             return new DashboardResponseDto
             {
+                TotalActiveUsers=totalactiveusers,
                 TotalStudents = totalStudents,
                 PlacedStudents = placedStudents,
                 UnplacedStudents = unplacedStudents,

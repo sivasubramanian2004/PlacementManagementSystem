@@ -41,7 +41,7 @@ namespace PMS.Service.Departments
             {
                 Name = dto.Name.Trim().ToUpperInvariant(),
                 Code = dto.Code.Trim().ToUpperInvariant(),
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 CreatedBy = CreatedBy,
 
             };
