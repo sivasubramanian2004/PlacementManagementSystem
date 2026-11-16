@@ -1,8 +1,11 @@
+
 # Placement Management System (PMS)
 
-A role-based Placement Management System built using **ASP.NET Core Web API (.NET 10)** and **SQL Server**.
+A role-based Placement Management System built using **ASP.NET Core Web API (.NET 10)**, **PostgreSQL**, and **Supabase**.
 
-The system manages users, students, departments, companies, placement drives, applications, academic details, authentication, authorization, email notifications, file uploads, search/filter/sort/pagination, and Excel exports.
+The system manages users, students, departments, companies, placement drives, applications, academic details, authentication, authorization, email notifications, cloud file uploads, search, filtering, sorting, pagination, and Excel exports.
+
+The application is containerized using Docker and deployed on Render, with Supabase providing managed PostgreSQL database and object storage services.
 
 ---
 
@@ -33,35 +36,50 @@ Selection / Rejection
 ## 🛠️ Tech Stack
 
 ### Backend
-
 - ASP.NET Core Web API
 - .NET 10
 - Entity Framework Core
-- SQL Server
+- PostgreSQL
+- Npgsql EF Core Provider
 - JWT Bearer Authentication
 - BCrypt.Net-Next
 - FluentValidation
 - Serilog
 - Mapster
-- MailKit / MimeKit
+- HttpClient
 - ClosedXML
 - Swagger / OpenAPI
 
-### Testing
+### Database & Cloud Storage
+- Supabase PostgreSQL
+- Supabase Object Storage
+- Supabase Storage API
 
+### Email Integration
+- Sendliberty HTTPS API
+- Gmail OAuth-based email delivery
+
+### Deployment & Containerization
+- Docker
+- Dockerfile
+- Docker Compose
+- Render (Backend Hosting)
+- Vercel (Frontend Hosting, if deployed)
+
+### Testing
 - xUnit
 - Moq
 - MockQueryable.Moq
 - Microsoft.NET.Test.Sdk
 
 ### Tools
-
 - Visual Studio 2026
-- SQL Server Management Studio
+- PostgreSQL
+- pgAdmin
 - Postman
 - Git
 - GitHub
-- Docker
+- Docker Desktop
 
 ---
 
@@ -101,6 +119,48 @@ PlacementManagementSystem
     ├── Unit Tests
     └── Service Tests
 ```
+
+---
+
+# ☁️ Cloud Architecture
+
+The application uses Supabase for database and file storage services, Render for backend hosting, and Sendliberty for transactional email delivery.
+
+```text
+                 React Frontend
+                       |
+                    Vercel
+                       |
+                     HTTPS
+                       |
+                .NET 10 Web API
+                     Render
+                       |
+                Docker Container
+                       |
+          ---------------------------
+          |            |            |
+     PostgreSQL   Object Storage   Email API
+          |            |            |
+       Supabase     Supabase     Sendliberty
+                                   |
+                              Gmail OAuth
+                                   |
+                              Student Email
+```
+
+### Cloud Services
+
+| Component | Technology | Purpose |
+|---|---|---|
+| Backend | ASP.NET Core .NET 10 | REST API |
+| Database | Supabase PostgreSQL | Relational data |
+| File Storage | Supabase Object Storage | Resume and profile photo uploads |
+| Hosting | Render | Backend deployment |
+| Containerization | Docker | Application packaging |
+| Email Service | Sendliberty | Transactional email delivery |
+| Email Provider | Gmail OAuth | Sending emails |
+| Frontend Hosting | Vercel | Frontend hosting, if deployed |
 
 ---
 
@@ -423,33 +483,44 @@ Year    LastSequence
 
 ---
 
-# 📧 Application Email Notification
+# 📧 Email Notification Integration
 
-After successful application submission, an HTML email is sent to the student.
+The application uses **Sendliberty HTTPS API** for transactional email delivery.
 
-Email includes:
+Emails are sent through a Gmail account connected using Google OAuth.
 
-- Student name
-- Application Number
-- Company Name
-- Job Title
-- Applied Date
-- Application Status
+### Email Features
 
-Example:
+- Registration OTP emails
+- Forgot Password OTP emails
+- Password reset notifications
+- Application confirmation emails
+
+### Email Architecture
 
 ```text
-Application No: A260001
-Company: Zoho Corporation
-Position: .NET Developer
-Status: Applied
+AuthService
+     ↓
+IEmailService
+     ↓
+EmailService
+     ↓
+Sendliberty HTTPS API
+     ↓
+Connected Gmail Account
+     ↓
+Student Email Address
 ```
 
-Email body is HTML-enabled using:
+### Email Implementation
 
-```csharp
-mailMessage.IsBodyHtml = true;
-```
+- Uses `HttpClient` for HTTPS API communication.
+- Uses Bearer token authentication.
+- Email content supports HTML formatting.
+- API credentials are configured through environment variables.
+- No direct SMTP connection is required.
+
+This integration avoids the outbound SMTP port restrictions on Render Free services.
 
 ---
 
@@ -508,7 +579,7 @@ Filter
 Sort
 ```
 
-but does **not** apply pagination.
+but does not apply pagination.
 
 Flow:
 
@@ -628,32 +699,69 @@ Recruiter
 
 ---
 
-# 📂 File Upload
+# 📂 Cloud File Upload – Supabase Object Storage
 
-Student module supports:
+The Student module supports cloud-based document storage using Supabase Object Storage.
+
+### Supported Files
 
 ```text
 Resume
 Profile Photo
 ```
 
-Example folders:
+### Storage Structure
+
+Example bucket:
 
 ```text
-StudentDocuments/
+pms-documents/
+│
 ├── StudentPhotos/
+│
 └── StudentResumes/
 ```
 
-The file service handles:
+### File Upload Features
 
 - File validation
 - File size validation
 - Extension validation
 - Unique filename generation
-- Folder creation
-- File deletion
+- Cloud object upload
+- Cloud object deletion
 - Error logging
+
+### Storage Workflow
+
+```text
+Student Uploads File
+        ↓
+.NET Web API
+        ↓
+File Validation
+        ↓
+Supabase Storage API
+        ↓
+Private Storage Bucket
+        ↓
+Object Key Saved in PostgreSQL
+```
+
+### File Access
+
+- Uploaded files are stored in a private Supabase Storage bucket.
+- The database stores the object key rather than the actual file.
+- Backend APIs authorize access before generating temporary signed URLs.
+- Signed URLs provide time-limited access to stored files.
+
+Example object key:
+
+```text
+StudentResumes/student_resume_123.pdf
+```
+
+This approach keeps files separate from relational database records.
 
 ---
 
@@ -909,6 +1017,8 @@ Pagination
 
 # 🗃️ Database Migration
 
+The application uses Entity Framework Core migrations with PostgreSQL.
+
 Using Package Manager Console:
 
 ```powershell
@@ -923,6 +1033,10 @@ dotnet ef migrations add MigrationName
 dotnet ef database update
 ```
 
+Production database connection uses the Supabase PostgreSQL connection string.
+
+For Render deployments, configure the database connection using environment variables rather than committing credentials.
+
 ---
 
 # ⚙️ Local Setup
@@ -932,12 +1046,13 @@ dotnet ef database update
 Install:
 
 - .NET 10 SDK
-- SQL Server
-- SQL Server Management Studio
 - Visual Studio 2026
-- Git
+- PostgreSQL-compatible database access
 - Postman
+- Git
 - Docker Desktop
+
+Supabase provides the managed PostgreSQL database and Object Storage services.
 
 ---
 
@@ -952,17 +1067,58 @@ cd PlacementManagementSystem
 
 ## Configure Database
 
-Example connection string:
+Configure the PostgreSQL connection string in user secrets or environment variables.
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PlacementManagementSystem;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
+Example:
+
+```text
+Host=YOUR_SUPABASE_POOLER_HOST;
+Port=5432;
+Database=postgres;
+Username=YOUR_SUPABASE_USERNAME;
+Password=YOUR_DATABASE_PASSWORD;
+SSL Mode=Require;
 ```
 
+Use the Session Pooler connection details from your Supabase dashboard when required.
+
 Do not commit production credentials or secrets to GitHub.
+
+---
+
+## Configure Supabase Storage
+
+Configure:
+
+```text
+Supabase__Url
+Supabase__Key
+Supabase__BucketName
+```
+
+Example bucket:
+
+```text
+pms-documents
+```
+
+Keep the bucket private and use backend authorization with signed URLs for protected file access.
+
+---
+
+## Configure Email Integration
+
+Configure the following settings using user secrets or environment variables:
+
+```text
+EmailSettings__SenderName
+EmailSettings__SenderEmail
+EmailSettings__ApiKey
+```
+
+The API key must be obtained from the Sendliberty dashboard.
+
+Do not commit email API keys to GitHub.
 
 ---
 
@@ -1001,6 +1157,115 @@ Swagger:
 ```text
 /swagger
 ```
+
+---
+
+# 🐳 Docker Deployment
+
+The application is containerized using a multi-stage Dockerfile.
+
+### Dockerfile
+
+The Dockerfile:
+
+1. Uses the .NET 10 SDK image to restore dependencies.
+2. Builds and publishes the PMS API.
+3. Uses the smaller .NET 10 ASP.NET runtime image.
+4. Exposes the API on port 8080.
+
+### Build Docker Image
+
+```bash
+docker build -t pms-api .
+```
+
+### Run Docker Container
+
+```bash
+docker run -d \
+  --name pms-api-container \
+  -p 8080:8080 \
+  -e ASPNETCORE_HTTP_PORTS=8080 \
+  pms-api
+```
+
+### Docker Compose
+
+Docker Compose is used for local container development.
+
+```bash
+docker compose up --build
+```
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+Production secrets should be configured through Render environment variables rather than committed `.env` files.
+
+---
+
+# ☁️ Production Deployment – Render
+
+The PMS API is deployed on Render using Docker.
+
+### Deployment Configuration
+
+| Setting | Value |
+|---|---|
+| Hosting Provider | Render |
+| Runtime | Docker |
+| Dockerfile | `./Dockerfile` |
+| Docker Build Context | `.` |
+| Internal Port | `8080` |
+| Environment | Production |
+
+### Environment Variables
+
+Configure the following variables in the Render dashboard:
+
+```text
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_HTTP_PORTS=8080
+
+ConnectionStrings__DefaultConnection=<SUPABASE_SESSION_POOLER_CONNECTION_STRING>
+
+Supabase__Url=<SUPABASE_PROJECT_URL>
+Supabase__Key=<SUPABASE_SECRET_KEY>
+Supabase__BucketName=pms-documents
+
+JwtSettings__SecretKey=<JWT_SECRET_KEY>
+```
+
+Email configuration:
+
+```text
+EmailSettings__SenderName=Placement Management System
+EmailSettings__SenderEmail=<CONNECTED_GMAIL_ADDRESS>
+EmailSettings__ApiKey=<SENDLIBERTY_API_KEY>
+```
+
+Never commit actual credentials, API keys, database passwords, or JWT secrets to GitHub.
+
+### Deployment Workflow
+
+```text
+GitHub Repository
+        ↓
+Render
+        ↓
+Docker Build
+        ↓
+.NET 10 Publish
+        ↓
+Docker Container
+        ↓
+Live PMS API
+```
+
+Render automatically deploys new commits from the configured branch when Auto-Deploy is enabled.
 
 ---
 
@@ -1098,6 +1363,8 @@ main
 - Application Eligibility Validation
 - Application Number Generation
 - Application Email Notification
+- Sendliberty Email API Integration
+- Production Email Delivery
 - Excel Export
 - Search
 - Filtering
@@ -1113,14 +1380,19 @@ main
 - Unit of Work
 - Unit Testing Foundation
 - Lookup / Enum API
+- PostgreSQL Database Integration
+- Supabase PostgreSQL Integration
+- Supabase Object Storage Integration
+- Docker Containerization
+- Render Deployment
 
 ## Future Enhancements
 
 - Interview Module
 - Redis Caching
-- Production deployment
 - Advanced integration testing
 - CI/CD pipeline enhancements
+- Monitoring and health checks
 
 ---
 
@@ -1130,6 +1402,9 @@ This project is developed as an academic and portfolio project for learning and 
 
 - Backend API Development
 - Database Design
+- PostgreSQL
+- Cloud Database Integration
+- Cloud Object Storage
 - Authentication & Authorization
 - Business Logic
 - Repository & Unit of Work
@@ -1137,6 +1412,8 @@ This project is developed as an academic and portfolio project for learning and 
 - File Upload
 - Email Integration
 - Excel Export
+- Docker Containerization
+- Cloud Deployment
 - Caching
 - Git Workflow
 - Clean Architecture Practices
